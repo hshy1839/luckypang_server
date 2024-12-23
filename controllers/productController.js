@@ -1,12 +1,37 @@
 const jwt = require('jsonwebtoken');
 const { Product } = require('../models/Product'); // Product 모델로 변경
+const multer = require('multer');
+const path = require('path');
 const JWT_SECRET = 'jm_shoppingmall';
+const fs = require('fs');
 const mongoose = require("mongoose");
 
-// 제품 추가
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // 파일의 fieldname에 따라 저장 경로를 다르게 설정
+        if (file.fieldname === 'mainImage') {
+            cb(null, 'uploads/product_main_images/'); // mainImage는 product_main_images 폴더에 저장
+        } else if (file.fieldname === 'additionalImages') {
+            cb(null, 'uploads/product_detail_images/'); // additionalImages는 product_detail_images 폴더에 저장
+        } else {
+            cb(new Error('Invalid field name'), null); // 유효하지 않은 필드명이면 에러
+        }
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname)); // 파일명에 타임스탬프 추가
+    },
+});
+
+
+  // multer 설정
+const upload = multer({ storage: storage });
+
+
+
 exports.createProduct = async (req, res) => {
-    console.log(req.body);
     try {
+        // JWT 토큰 확인
         const token = req.headers['authorization']?.split(' ')[1];
         if (!token) {
             return res.status(403).json({ success: false, message: 'Token is required' });
@@ -16,7 +41,6 @@ exports.createProduct = async (req, res) => {
         try {
             decoded = jwt.verify(token, JWT_SECRET);
         } catch (err) {
-            console.error('Token verification failed:', err);
             return res.status(401).json({ success: false, message: 'Invalid or expired token' });
         }
 
@@ -24,37 +48,44 @@ exports.createProduct = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Token does not contain userId' });
         }
 
-        const { name, categoryMain, categorySub, price, description, sizeStock } = req.body;
-        const images = req.files ? req.files.map(file => file.path) : [];
-        const mainImage = req.file ? req.file.path : '';
+        // 파일 처리 후 저장된 경로 추출
+        let mainImageUrl = '';
+        if (req.files && req.files.mainImage) {
+            mainImageUrl = '/uploads/' + req.files.mainImage[0].filename; // 로컬에 저장된 경로
+        }
 
+        const uploadedImages = [];
+        if (req.files && req.files.additionalImages) {
+            req.files.additionalImages.forEach(file => {
+                uploadedImages.push('/uploads/' + file.filename); // 로컬에 저장된 경로들
+            });
+        }
+
+        // 텍스트 데이터 받기
+        const { name, categoryMain, categorySub, price, description, sizeStock } = req.body;
+
+        // 제품 생성
         const product = new Product({
             name,
             category: { main: categoryMain, sub: categorySub },
             price,
             description,
             sizeStock,
-            mainImage,
-            images,
+            mainImage: mainImageUrl, 
+            additionalImages: uploadedImages, 
         });
 
-        const createProduct = await product.save();
+        console.log('Request Body:', req.body);
+        console.log('Request Files:', req.files);
+
+        const createdProduct = await product.save();
 
         return res.status(200).json({
             success: true,
-            product: createProduct,
+            product: createdProduct,
         });
     } catch (err) {
         console.error('상품 등록 실패:', err);
-
-        if (err.code === 11000) {
-            const duplicatedField = Object.keys(err.keyPattern)[0];
-            return res.status(400).json({
-                success: false,
-                message: `이미 사용 중인 ${duplicatedField}입니다.`,
-            });
-        }
-
         return res.status(500).json({
             success: false,
             message: '상품 등록 중 오류가 발생했습니다.',
@@ -62,6 +93,8 @@ exports.createProduct = async (req, res) => {
         });
     }
 };
+
+
 
 // 모든 제품 조회
 exports.getAllProducts = async (req, res) => {
@@ -140,6 +173,39 @@ exports.deleteProduct = async (req, res) => {
             return res.status(404).json({ success: false, message: '제품을 찾을 수 없습니다.' });
         }
 
+        // 이미지 파일 삭제
+        if (product.mainImage) {
+            const mainImagePath = path.join(__dirname, '..', product.mainImage);
+            await new Promise((resolve, reject) => {
+                fs.unlink(mainImagePath, (err) => {
+                    if (err) {
+                        console.error('메인 이미지 삭제 실패:', err);
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+        }
+
+        // 추가 이미지 삭제
+        await Promise.all(
+            product.additionalImages.map((image) => {
+                const imagePath = path.join(__dirname, '..', image);
+                return new Promise((resolve, reject) => {
+                    fs.unlink(imagePath, (err) => {
+                        if (err) {
+                            console.error('추가 이미지 삭제 실패:', err);
+                            reject(err);
+                        } else {
+                            resolve();
+                        }
+                    });
+                });
+            })
+        );
+
+        // 제품 삭제
         await Product.findByIdAndDelete(id);
 
         return res.status(200).json({ success: true, message: '제품이 삭제되었습니다.' });

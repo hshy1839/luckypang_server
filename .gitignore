@@ -1,0 +1,34 @@
+# Node.js 관련
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# 환경 설정 파일
+.env
+
+# 빌드 출력 폴더
+dist/
+build/
+
+# 로그 파일
+*.log
+
+# OS 관련 파일
+.DS_Store
+Thumbs.db
+
+# IDE/에디터 관련 파일
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# 테스트 관련 파일 (coverage 폴더 등)
+coverage/
+*.lcov
+
+# 의존성 패키지 관련 파일
+package-lock.json
+yarn.lock
+

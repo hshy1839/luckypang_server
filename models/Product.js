@@ -11,7 +11,7 @@ const productSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },   // 상품 생성 날짜
   price: { type: Number, required: true },        // 가격
   description: { type: String },      
-  images: [{ type: String }],                    
+  additionalImages: [{ type: String }],                    
   sizeStock: {  // 사이즈별 재고
     S: { type: Number, default: 0 },
     M: { type: Number, default: 0 },

@@ -12,12 +12,13 @@ const JWT_SECRET = 'jm_shoppingmall';
 const userRoutes = require('./routes/userRoutes');
 const noticeRoutes = require('./routes/noticeRoutes');
 const productRoutes = require('./routes/productRoutes');
+const { checkS3Connection } = require('./s3Service');
 
 
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(cors({
   origin: '*',
@@ -31,7 +32,7 @@ app.listen(8863, () => {
 });
 
 connectDB();
-
+checkS3Connection();
 app.use('/api/users', userRoutes);
 app.use('/api/users', noticeRoutes);
 app.use('/api', productRoutes);
