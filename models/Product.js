@@ -10,7 +10,8 @@ const productSchema = new mongoose.Schema({
   main_image: { type: String },                   // 이미지 URL (이미지 링크 또는 S3 링크 등)
   createdAt: { type: Date, default: Date.now },   // 상품 생성 날짜
   price: { type: Number, required: true },        // 가격
-  description: { type: String },      
+  description: { type: String },
+  mainImage: [{type: String}],      
   additionalImages: [{ type: String }],                    
   sizeStock: {  // 사이즈별 재고
     S: { type: Number, default: 0 },

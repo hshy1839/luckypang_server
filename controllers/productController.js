@@ -51,13 +51,13 @@ exports.createProduct = async (req, res) => {
         // 파일 처리 후 저장된 경로 추출
         let mainImageUrl = '';
         if (req.files && req.files.mainImage) {
-            mainImageUrl = '/uploads/' + req.files.mainImage[0].filename; // 로컬에 저장된 경로
+            mainImageUrl = '/uploads/product_main_images/' + req.files.mainImage[0].filename; // 로컬에 저장된 경로
         }
 
         const uploadedImages = [];
         if (req.files && req.files.additionalImages) {
             req.files.additionalImages.forEach(file => {
-                uploadedImages.push('/uploads/' + file.filename); // 로컬에 저장된 경로들
+                uploadedImages.push('/uploads/product_detail_images/' + file.filename); // 로컬에 저장된 경로들
             });
         }
 
