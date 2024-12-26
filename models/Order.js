@@ -15,11 +15,7 @@ const orderSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true },  // 주문 총액 (모든 상품의 가격 합계)
   shippingAddress: {
     addressLine1: { type: String, required: true },  // 주소 1
-    addressLine2: { type: String },                  // 주소 2 (선택 사항)
-    city: { type: String, required: true },          // 도시
-    state: { type: String, required: true },         // 주/도
-    postalCode: { type: String, required: true },    // 우편번호
-    country: { type: String, required: true },       // 국가
+    addressLine2: { type: String, required:true},                  // 주소 2 (선택 사항)
   },
   paymentStatus: { 
     type: String, 
@@ -33,9 +29,7 @@ const orderSchema = new mongoose.Schema({
     required: true,
     default: 'pending'  // 주문 상태 (예: 대기 중, 배송 중, 배송 완료, 취소됨)
   },
-  paymentMethod: { type: String, required: true }, // 결제 방법 (예: 카드, 계좌이체 등)
   createdAt: { type: Date, default: Date.now }, // 주문 생성 날짜
-  updatedAt: { type: Date, default: Date.now }, // 주문 업데이트 날짜
 });
 
 // 주문 모델 생성

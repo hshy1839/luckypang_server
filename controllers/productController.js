@@ -174,7 +174,7 @@ exports.deleteProduct = async (req, res) => {
         }
 
         // 이미지 파일 삭제
-        if (product.mainImage) {
+        if (product.mainImage && typeof product.mainImage === 'string') {
             const mainImagePath = path.join(__dirname, '..', product.mainImage);
             await new Promise((resolve, reject) => {
                 fs.unlink(mainImagePath, (err) => {
@@ -189,21 +189,28 @@ exports.deleteProduct = async (req, res) => {
         }
 
         // 추가 이미지 삭제
-        await Promise.all(
-            product.additionalImages.map((image) => {
-                const imagePath = path.join(__dirname, '..', image);
-                return new Promise((resolve, reject) => {
-                    fs.unlink(imagePath, (err) => {
-                        if (err) {
-                            console.error('추가 이미지 삭제 실패:', err);
-                            reject(err);
-                        } else {
-                            resolve();
-                        }
-                    });
-                });
-            })
-        );
+        if (Array.isArray(product.additionalImages)) {
+            await Promise.all(
+                product.additionalImages.map((image) => {
+                    if (typeof image === 'string') {
+                        const imagePath = path.join(__dirname, '..', image);
+                        return new Promise((resolve, reject) => {
+                            fs.unlink(imagePath, (err) => {
+                                if (err) {
+                                    console.error('추가 이미지 삭제 실패:', err);
+                                    reject(err);
+                                } else {
+                                    resolve();
+                                }
+                            });
+                        });
+                    } else {
+                        console.warn('올바르지 않은 이미지 경로:', image);
+                        return Promise.resolve();
+                    }
+                })
+            );
+        }
 
         // 제품 삭제
         await Product.findByIdAndDelete(id);

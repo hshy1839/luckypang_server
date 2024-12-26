@@ -101,25 +101,32 @@ exports.getUserInfo = async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1]; // Bearer 토큰에서 추출
     if (!token) {
       return res.status(401).json({ success: false, message: '토큰이 없습니다.' });
-    }
-
+    } 
     // 토큰 검증
-    const decoded = jwt.verify(token, JWT_SECRET); // 토큰 검증 후 디코딩
-    const userId = decoded.id; // 토큰에서 유저 ID 추출
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);  // 토큰 검증 후 디코딩
+    } catch (error) {
+      console.error('토큰 검증 실패:', error);  // 오류 로그
+      return res.status(401).json({ success: false, message: '유효하지 않거나 만료된 토큰입니다.' });
+    }
+    
+    const userId = decoded.userId;  // 토큰에서 유저 ID 추출
 
     // 유저 정보 조회 (비밀번호 제외)
     const user = await User.findById(userId).select('-password');
     if (!user) {
+      console.error('유저를 찾을 수 없음:', userId);  // 유저 ID가 없을 경우 로그
       return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
     }
 
     // 유저 정보 반환
     res.status(200).json({
       success: true,
-      user, // 로그인한 유저 정보
+      user,  // 로그인한 유저 정보
     });
   } catch (err) {
-    console.error('유저 정보 조회 실패:', err);
+    console.error('서버 오류 발생:', err);  // 서버 오류 로그
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };

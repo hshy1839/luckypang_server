@@ -18,7 +18,7 @@ router.post('/signup', signupUser);
 //모든 유저 정보 조회
 router.get('/userinfo', getAllUsersInfo );
 //아이디를 통해 유저 조회
-router.get('/userinfo', getAllUsersInfo );
+router.get('/userinfoget', getUserInfo );
 //유저 정보 조회
 router.get('/userinfo/:id',  getUserInfoByid);
 //유저 수정
