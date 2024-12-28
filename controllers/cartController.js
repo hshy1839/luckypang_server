@@ -115,7 +115,6 @@ const calculateTotalPrice = (sizes, price) => {
 exports.getCartInfo = async (req, res) => {
     const { userId } = req.params; // URL 경로 파라미터에서 userId 받기
 
-    console.log('요청된 userId:', userId);
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
         console.error('유효하지 않은 userId:', userId);
@@ -130,7 +129,6 @@ exports.getCartInfo = async (req, res) => {
         }
 
         const decoded = jwt.verify(token, JWT_SECRET);
-        console.log('디코딩된 토큰:', decoded); // 토큰 정보 콘솔 출력
 
         // 사용자 ID로 모든 장바구니 항목 찾기
         const carts = await Cart.find({ userId: new mongoose.Types.ObjectId(userId) });
@@ -141,7 +139,6 @@ exports.getCartInfo = async (req, res) => {
         }
 
         // 모든 장바구니 항목을 콘솔에 출력
-        console.log('사용자의 모든 장바구니 항목:', carts);
 
         // 모든 장바구니 정보를 클라이언트에 반환
         return res.status(200).json({ success: true, carts });
@@ -149,5 +146,69 @@ exports.getCartInfo = async (req, res) => {
         console.error('장바구니 조회 중 오류:', err);
         return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
+};
+
+// 장바구니에서 특정 상품 삭제
+exports.deleteCart = async (req, res) => {
+    console.log('clal mememememe');
+  try {
+    // 요청 헤더에서 Authorization 토큰 추출
+    const token = req.headers['authorization']?.split(' ')[1];
+    console.log('Authorization header:', req.headers['authorization']);
+    if (!token) {
+      return res.status(403).json({ success: false, message: 'Token is required' });
+    }
+
+    // JWT 토큰 검증
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+      console.log('Decoded JWT:', decoded);
+    } catch (err) {
+      console.error('Token verification failed:', err);
+      return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    // decoded에서 userId 확인
+    const userId = decoded?.userId;
+    console.log('UserId from token:', userId);
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Token does not contain userId' });
+    }
+
+    // 요청 파라미터에서 cartId 추출
+    const { id } = req.params;  // :id를 받아옴
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'cartId is required' });
+    }
+
+    // cartId가 유효한 ObjectId인지 확인
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid cartId' });
+    }
+
+    // 해당 사용자와 관련된 장바구니 항목을 찾아 삭제
+    const deletedCartItem = await Cart.findOneAndDelete({
+      _id: new mongoose.Types.ObjectId(id),
+      userId: new mongoose.Types.ObjectId(userId), // 사용자 확인
+    });
+
+    if (!deletedCartItem) {
+      return res.status(404).json({ success: false, message: 'Cart item not found or you are not authorized to delete it' });
+    }
+
+    // 삭제 성공 메시지 반환
+    return res.status(200).json({
+      success: true,
+      message: 'Cart item has been successfully deleted',
+    });
+  } catch (err) {
+    console.error('장바구니 상품 삭제 중 오류:', err);
+    return res.status(500).json({
+      success: false,
+      message: '서버 오류가 발생했습니다.',
+      error: err.message,
+    });
+  }
 };
 
