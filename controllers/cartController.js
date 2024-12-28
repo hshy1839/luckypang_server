@@ -110,3 +110,44 @@ const calculateTotalPrice = (sizes, price) => {
     return total + (sizeData.quantity * price);
   }, 0);
 };
+
+// 특정 제품 조회
+exports.getCartInfo = async (req, res) => {
+    const { userId } = req.params; // URL 경로 파라미터에서 userId 받기
+
+    console.log('요청된 userId:', userId);
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        console.error('유효하지 않은 userId:', userId);
+        return res.status(400).json({ success: false, message: '유효하지 않은 사용자 ID입니다.' });
+    }
+
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            console.error('토큰 누락: 인증 실패');
+            return res.status(401).json({ success: false, message: '로그인 정보가 없습니다.' });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        console.log('디코딩된 토큰:', decoded); // 토큰 정보 콘솔 출력
+
+        // 사용자 ID로 모든 장바구니 항목 찾기
+        const carts = await Cart.find({ userId: new mongoose.Types.ObjectId(userId) });
+
+        if (carts.length === 0) {
+            console.error('사용자 장바구니 없음:', userId);
+            return res.status(404).json({ success: false, message: '장바구니를 찾을 수 없습니다.' });
+        }
+
+        // 모든 장바구니 항목을 콘솔에 출력
+        console.log('사용자의 모든 장바구니 항목:', carts);
+
+        // 모든 장바구니 정보를 클라이언트에 반환
+        return res.status(200).json({ success: true, carts });
+    } catch (err) {
+        console.error('장바구니 조회 중 오류:', err);
+        return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+};
+

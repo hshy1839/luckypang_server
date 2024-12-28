@@ -1,6 +1,7 @@
 const express = require('express');
 const { 
     addToCart, 
+    getCartInfo,
 } = require('../controllers/cartController');
 
 const router = express.Router();
@@ -13,6 +14,7 @@ router.use((req, res, next) => {
 
 // 공지사항 추가
 router.post('/cart', addToCart);
+router.get('/cart/:userId', getCartInfo);
 
 module.exports = router;
 
