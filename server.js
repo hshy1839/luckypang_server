@@ -12,8 +12,9 @@ const userRoutes = require('./routes/userRoutes');
 const noticeRoutes = require('./routes/noticeRoutes');
 const productRoutes = require('./routes/productRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const shippingRoutes = require('./routes/shippingRoutes');
 
-const { checkS3Connection } = require('./s3Service');
 
 // CORS 설정 (여러 도메인 허용)
 app.use(cors({
@@ -43,3 +44,5 @@ app.use('/api/users', userRoutes);
 app.use('/api/users', noticeRoutes);
 app.use('/api', productRoutes);
 app.use('/api', cartRoutes);
+app.use('/api', orderRoutes);
+app.use('/api', shippingRoutes);
