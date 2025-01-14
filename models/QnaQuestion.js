@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const questionSchema = new mongoose.Schema({
+const qnaQuestionSchema = new mongoose.Schema({
     title: { type: String, required: true },  // 질문 제목
     body: { type: String, required: true },   // 질문 내용
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // 질문 작성자 (User 모델 참조)
@@ -14,6 +14,6 @@ const questionSchema = new mongoose.Schema({
     ],
   });
 
-  const Question = mongoose.model('Question', questionSchema);
+  const qnaQuestion = mongoose.model('Question', qnaQuestionSchema);
 
-module.exports = { Question };
+module.exports = { qnaQuestion };

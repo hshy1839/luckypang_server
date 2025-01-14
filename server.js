@@ -14,6 +14,7 @@ const productRoutes = require('./routes/productRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const shippingRoutes = require('./routes/shippingRoutes');
+const qnaQuestionRoutes = require('./routes/qnaQuestionRoutes');
 
 
 // CORS 설정 (여러 도메인 허용)
@@ -46,3 +47,4 @@ app.use('/api', productRoutes);
 app.use('/api', cartRoutes);
 app.use('/api', orderRoutes);
 app.use('/api', shippingRoutes);
+app.use('/api', qnaQuestionRoutes);
