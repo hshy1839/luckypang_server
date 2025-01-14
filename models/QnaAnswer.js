@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 
-const answerSchema = new mongoose.Schema({
+const qnaAnswerSchema = new mongoose.Schema({
     questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Question', required: true }, // 질문 ID (Question 모델 참조)
     body: { type: String, required: true },   // 답변 내용
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // 답변 작성자 (User 모델 참조)
@@ -9,6 +9,6 @@ const answerSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }, // 답변 업데이트 시간
   });
 
-  const Answer = mongoose.model('Answer', answerSchema);
+  const qnaAnswer = mongoose.model('Answer', qnaAnswerSchema);
 
-  module.exports = { Answer };
+  module.exports = { qnaAnswer };

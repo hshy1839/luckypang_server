@@ -1,10 +1,14 @@
 const express = require('express');
-const { 
-    createQuestion, 
+const {
+    createQuestion,
     getQuestion,
     getAllQuestions,
     getQuestionById,
 } = require('../controllers/qnaQuestionController');
+const {
+    addAnswer, // 답변 등록 함수 추가
+    getAnswersByQuestionId, // 질문에 연결된 답변 가져오기 함수 추가
+} = require('../controllers/qnaAnswerController');
 
 const router = express.Router();
 
@@ -14,12 +18,14 @@ router.use((req, res, next) => {
     next();
 });
 
-// 배송지 추가
+// 질문 관련 라우트
 router.post('/qnaQuestion', createQuestion);
 router.get('/qnaQuestion/getinfo', getQuestion);
 router.get('/qnaQuestion/getinfoAll', getAllQuestions);
 router.get('/qnaQuestion/getinfoByid/:id', getQuestionById);
 
+// 답변 관련 라우트
+router.post('/qnaQuestion/addAnswer/:id', addAnswer); // 특정 질문에 답변 추가
+router.get('/qnaQuestion/getAnswers/:id', getAnswersByQuestionId); // 특정 질문에 연결된 답변 가져오기
+
 module.exports = router;
-
-
