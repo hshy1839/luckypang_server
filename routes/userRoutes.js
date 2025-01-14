@@ -11,6 +11,11 @@ const {
 
 const router = express.Router();
 
+// 디버깅 로그 추가: 요청 경로 확인
+router.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+    next();
+});
 // 로그인
 router.post('/login', loginUser);
 // 회원가입
@@ -22,7 +27,7 @@ router.get('/userinfoget', getUserInfo );
 //유저 정보 조회
 router.get('/userinfo/:id',  getUserInfoByid);
 //유저 수정
-router.put('/userinfo/:id', updateUserInfo );
+router.put('/userinfoUpdate', updateUserInfo );
 //유저 삭제
 router.delete('/userinfo/:id', deleteUser );
 

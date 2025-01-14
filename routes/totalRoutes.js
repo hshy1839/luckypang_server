@@ -1,6 +1,7 @@
 const express = require('express');
 const { 
     saveAccountInfo,
+    getAccountInfo,
 } = require('../controllers/totalController');
 
 const router = express.Router();
@@ -11,7 +12,9 @@ router.use((req, res, next) => {
     next();
 });
 
+
 router.post('/account', saveAccountInfo);
+router.get('/accountInfo', getAccountInfo);
 
 module.exports = router;
 

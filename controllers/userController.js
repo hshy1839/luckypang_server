@@ -177,8 +177,7 @@ exports.getUserInfoByid = async (req, res) => {
 
 //사용자 정보 수정 로직
 exports.updateUserInfo = async (req, res) => {
-  const { id } = req.params;  // URL 파라미터로 받은 유저 ID
-  const { is_active } = req.body;  // 요청 본문에서 받은 업데이트 정보
+  const { name, phoneNumber } = req.body; // 요청 본문에서 업데이트할 데이터 추출
 
   // Authorization 헤더에서 토큰 추출
   const token = req.headers.authorization?.split(' ')[1];
@@ -187,29 +186,30 @@ exports.updateUserInfo = async (req, res) => {
   }
 
   try {
-    // 환경 변수에서 JWT_SECRET 가져오기
-    const decoded = jwt.verify(token, JWT_SECRET);  // process.env.JWT_SECRET 사용
-    const userId = decoded.userId;
+    // JWT 토큰 검증 및 사용자 ID 추출
+    const decoded = jwt.verify(token, JWT_SECRET); // process.env.JWT_SECRET 사용
+    const userId = decoded.userId; // 토큰에서 사용자 ID 추출
 
-    // 유저 정보 찾기
-    const user = await User.findById(id);
+    // 사용자 정보 검색
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
+      return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
     }
 
-    // is_active 값을 업데이트
-    if (is_active !== undefined) {
-      user.is_active = is_active;
-    }
+    // 업데이트할 필드만 수정
+    if (name) user.name = name;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
 
+    // 변경 사항 저장
     await user.save();
 
-    return res.status(200).json({ success: true, message: '유저 정보가 업데이트 되었습니다.' });
+    return res.status(200).json({ success: true, message: '사용자 정보가 업데이트되었습니다.' });
   } catch (err) {
-    console.error('유저 정보 업데이트 중 오류 발생:', err);
+    console.error('사용자 정보 업데이트 중 오류 발생:', err);
     return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };
+
 
 // 유저 삭제 처리
 exports.deleteUser = async (req, res) => {
