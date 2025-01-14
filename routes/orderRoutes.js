@@ -3,7 +3,7 @@ const {
     addToOrder, 
     getOrdersByUser,
     getAllOrders,
-    updateOrder
+    updateOrder,
 } = require('../controllers/orderController');
 
 const router = express.Router();
