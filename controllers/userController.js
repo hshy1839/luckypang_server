@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models/User');
 const JWT_SECRET = 'jm_shoppingmall';
+const mongoose = require("mongoose");
 
 // 로그인 컨트롤러
 exports.loginUser = async (req, res) => {
@@ -133,8 +134,7 @@ exports.getUserInfo = async (req, res) => {
 
 //아이디를 통한 특정 유저 조회
 exports.getUserInfoByid = async (req, res) => {
-  const { id } = req.params;  // URL 파라미터로 받은 유저 ID
-  const { is_active } = req.body;  // 요청 본문에서 받은 업데이트 정보
+  const { id } = req.params; // URL 파라미터에서 유저 ID 가져오기
 
   // Authorization 헤더에서 토큰 추출
   const token = req.headers.authorization?.split(' ')[1];
@@ -143,23 +143,30 @@ exports.getUserInfoByid = async (req, res) => {
   }
 
   try {
-    // 환경 변수에서 JWT_SECRET 가져오기
-    const decoded = jwt.verify(token, JWT_SECRET);  // process.env.JWT_SECRET 사용
-    const userId = decoded.userId;
+    // JWT 검증 및 디코딩
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const requestorId = decoded.userId; // 토큰에서 요청자의 ID 가져오기
 
-    // 유저 정보 찾기
+    // `id`가 유효한 ObjectId인지 확인
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: '유효하지 않은 유저 ID입니다.' });
+    }
+
+    // 데이터베이스에서 유저 정보 검색
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
     }
 
-
     // 유저 정보 반환
     res.status(200).json({
       success: true,
-      name: user.name, // 로그인한 유저 정보
-      phoneNumber: user.phoneNumber,
-      email: user.email,
+      user: {
+        name: user.name,
+        phoneNumber: user.phoneNumber,
+        email: user.email,
+        username: user.username,
+      },
     });
   } catch (err) {
     console.error('유저 정보 조회 실패:', err);

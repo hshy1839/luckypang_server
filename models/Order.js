@@ -52,13 +52,13 @@ const orderSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['Pending', 'Paid', 'Failed'], // 결제 상태
-    default: 'Pending',
+    enum: ['결제 대기', '결제 완료', '결제 실패'], // 결제 상태
+    default: '결제 대기',
   },
   orderStatus: {
     type: String,
-    enum: ['Processing', 'Shipped', 'Delivered', 'Cancelled'], // 주문 상태
-    default: 'Processing',
+    enum: ['처리 중', '주문 완료', '취소'], // 주문 상태
+    default: '주문 완료',
   },
 }, { timestamps: true });
 

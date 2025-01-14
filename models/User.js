@@ -32,12 +32,6 @@ const userSchema = mongoose.Schema({
         type: Date,
         default: Date.now, // 기본값으로 생성된 날짜를 사용
     },
-    address: {
-        type: String
-    },
-    address_detail : {
-        type: String
-    }
 });
 
 // 비밀번호 암호화
