@@ -39,8 +39,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.listen(8863, () => {
-  console.log('listening to http://localhost:8863');
+app.listen(8865, () => {
+  console.log('listening to http://localhost:8865');
 });
 
 connectDB();
