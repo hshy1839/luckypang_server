@@ -4,7 +4,8 @@ const {
     getAllCoupons, 
     getCoupon, 
     updateCoupon, 
-    deleteCoupon 
+    deleteCoupon,
+    verifyCoupon
 } = require('../controllers/couponController');
 
 const router = express.Router();
@@ -20,6 +21,8 @@ router.post('/coupon', createCoupon);
 
 // 모든 쿠폰 조회
 router.get('/coupons', getAllCoupons);
+
+router.get('/verifyCoupon', verifyCoupon);
 
 // 특정 쿠폰 조회
 router.get('/coupon/:id', getCoupon);

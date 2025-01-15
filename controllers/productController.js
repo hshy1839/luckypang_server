@@ -173,20 +173,30 @@ exports.deleteProduct = async (req, res) => {
             return res.status(404).json({ success: false, message: '제품을 찾을 수 없습니다.' });
         }
 
-        // 이미지 파일 삭제
-        if (product.mainImage && typeof product.mainImage === 'string') {
-            const mainImagePath = path.join(__dirname, '..', product.mainImage);
-            await new Promise((resolve, reject) => {
-                fs.unlink(mainImagePath, (err) => {
-                    if (err) {
-                        console.error('메인 이미지 삭제 실패:', err);
-                        reject(err);
+    
+        if (Array.isArray(product.mainImage)) {
+            await Promise.all(
+                product.mainImage.map((image) => {
+                    if (typeof image === 'string') {
+                        const imagePath = path.join(__dirname, '..', image);
+                        return new Promise((resolve, reject) => {
+                            fs.unlink(imagePath, (err) => {
+                                if (err) {
+                                    console.error('메인 이미지 삭제 실패:', err);
+                                    reject(err);
+                                } else {
+                                    resolve();
+                                }
+                            });
+                        });
                     } else {
-                        resolve();
+                        console.warn('올바르지 않은 이미지 경로:', image);
+                        return Promise.resolve();
                     }
-                });
-            });
+                })
+            );
         }
+        
 
         // 추가 이미지 삭제
         if (Array.isArray(product.additionalImages)) {

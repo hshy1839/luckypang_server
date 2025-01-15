@@ -173,3 +173,37 @@ exports.updateCoupon = async (req, res) => {
         return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 };
+
+// 쿠폰 코드 검증
+exports.verifyCoupon = async (req, res) => {
+    const code = req.query.code; // 쿼리 매개변수에서 쿠폰 코드 가져오기
+
+    if (!code) {
+        return res.status(400).json({ success: false, message: '쿠폰 코드가 제공되지 않았습니다.' });
+    }
+
+    try {
+        const coupon = await Coupon.findOne({ code: code }); // 코드로 쿠폰 조회
+        if (coupon) {
+            return res.status(200).json({
+                success: true,
+                message: '유효한 쿠폰입니다.',
+                discountValue: coupon.discountValue,
+                discountType: coupon.discountType,
+                name: coupon.name,
+            });
+        } else {
+            return res.status(404).json({
+                success: false,
+                message: '유효하지 않은 쿠폰 코드입니다.',
+            });
+        }
+    } catch (err) {
+        console.error('쿠폰 코드 검증 실패:', err);
+        return res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.',
+            error: err.message,
+        });
+    }
+};

@@ -7,22 +7,6 @@ const orderSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-  account: [
-    {
-      accountName : {
-        type: String,
-        required: true,
-      },
-      accountNumber: {
-        type: String,
-        required: true,
-      },
-      accountBank: {
-        type: String,
-        required: true,
-      }
-    },
-  ],
   items: [
     {
       productId: {
