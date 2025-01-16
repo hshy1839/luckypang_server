@@ -101,7 +101,6 @@ exports.getNotice = async (req, res) => {
     const { id } = req.params;
 
     // 디버깅 로그 추가
-    console.log('요청 ID:', id);
 
     // ID 유효성 확인
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -118,7 +117,6 @@ exports.getNotice = async (req, res) => {
         }
 
         const decoded = jwt.verify(token, JWT_SECRET);
-        console.log('디코딩된 토큰:', decoded);
 
         // 공지 조회
         const notice = await Notice.findById(id);

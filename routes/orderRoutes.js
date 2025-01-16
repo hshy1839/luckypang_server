@@ -18,7 +18,8 @@ router.use((req, res, next) => {
 router.post('/order', addToOrder);
 router.get('/orderByUser', getOrdersByUser);
 router.get('/orderAll', getAllOrders);
-router.put('/orderEdit/:id', updateOrder);
+router.put('/editPayment/:id', updateOrder);
+router.put('/editOrder/:id', updateOrder);
 
 module.exports = router;
 

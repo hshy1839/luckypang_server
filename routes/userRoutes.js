@@ -6,7 +6,8 @@ const {
     updateUserInfo,
     deleteUser,
     getUserInfo,
-    getUserInfoByid
+    getUserInfoByid,
+    loginAdmin
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.use((req, res, next) => {
 });
 // 로그인
 router.post('/login', loginUser);
+router.post('/loginAdmin', loginAdmin);
 // 회원가입
 router.post('/signup', signupUser);
 //모든 유저 정보 조회

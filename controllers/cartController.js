@@ -150,11 +150,9 @@ exports.getCartInfo = async (req, res) => {
 
 // 장바구니에서 특정 상품 삭제
 exports.deleteCart = async (req, res) => {
-    console.log('clal mememememe');
   try {
     // 요청 헤더에서 Authorization 토큰 추출
     const token = req.headers['authorization']?.split(' ')[1];
-    console.log('Authorization header:', req.headers['authorization']);
     if (!token) {
       return res.status(403).json({ success: false, message: 'Token is required' });
     }
@@ -163,7 +161,6 @@ exports.deleteCart = async (req, res) => {
     let decoded;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
-      console.log('Decoded JWT:', decoded);
     } catch (err) {
       console.error('Token verification failed:', err);
       return res.status(401).json({ success: false, message: 'Invalid or expired token' });
@@ -171,7 +168,6 @@ exports.deleteCart = async (req, res) => {
 
     // decoded에서 userId 확인
     const userId = decoded?.userId;
-    console.log('UserId from token:', userId);
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Token does not contain userId' });
     }

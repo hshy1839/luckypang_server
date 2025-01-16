@@ -82,7 +82,6 @@ exports.getAllCoupons = async (req, res) => {
 exports.getCoupon = async (req, res) => {
     const { id } = req.params;
 
-    console.log('요청 ID:', id);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         console.error('유효하지 않은 쿠폰 ID:', id);

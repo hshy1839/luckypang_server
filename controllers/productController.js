@@ -75,8 +75,6 @@ exports.createProduct = async (req, res) => {
             additionalImages: uploadedImages, 
         });
 
-        console.log('Request Body:', req.body);
-        console.log('Request Files:', req.files);
 
         const createdProduct = await product.save();
 
@@ -126,7 +124,6 @@ exports.getAllProducts = async (req, res) => {
 exports.getProduct = async (req, res) => {
     const { id } = req.params;
 
-    console.log('요청 ID:', id);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         console.error('유효하지 않은 제품 ID:', id);
@@ -141,7 +138,6 @@ exports.getProduct = async (req, res) => {
         }
 
         const decoded = jwt.verify(token, JWT_SECRET);
-        console.log('디코딩된 토큰:', decoded);
 
         const product = await Product.findById(id);
         if (!product) {

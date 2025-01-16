@@ -4,6 +4,51 @@ const JWT_SECRET = 'jm_shoppingmall';
 const mongoose = require("mongoose");
 
 // 로그인 컨트롤러
+exports.loginAdmin = async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.body.username });
+    if (!user) {
+      return res.json({
+        loginSuccess: false,
+        message: '아이디를 다시 확인하세요.',
+      });
+    }
+
+    const isMatch = await user.comparePassword(req.body.password);
+    if (!isMatch) {
+      return res.json({
+        loginSuccess: false,
+        message: '비밀번호가 틀렸습니다',
+      });
+    }
+
+    if (!user.is_active) {
+      return res.json({
+        loginSuccess: false,
+        message: '승인 대기 중입니다.',
+      });
+    }
+
+    if (user.user_type !== '1') {
+      return res.json({
+        loginSuccess: false,
+        message: '관리자가 아닙니다.',
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, username: user.username, phoneNumber: user.phoneNumber },
+      JWT_SECRET,
+      { expiresIn: '48h' }
+    );
+
+    res.status(200).json({ loginSuccess: true, token });
+  } catch (err) {
+    console.error('로그인 실패:', err);
+    res.status(400).send(err);
+  }
+};
+
 exports.loginUser = async (req, res) => {
   try {
     const user = await User.findOne({ username: req.body.username });
@@ -21,14 +66,15 @@ exports.loginUser = async (req, res) => {
         message: '비밀번호가 틀렸습니다',
       });
     }
-    if (!user.is_active) {ㅁ
+
+    if (!user.is_active) {
       return res.json({
         loginSuccess: false,
         message: '승인 대기 중입니다.',
       });
-    } 
+    }
 
-    
+
     const token = jwt.sign(
       { userId: user._id, username: user.username, phoneNumber: user.phoneNumber },
       JWT_SECRET,
@@ -36,7 +82,6 @@ exports.loginUser = async (req, res) => {
     );
 
     res.status(200).json({ loginSuccess: true, token });
-    console.log('login 성공');
   } catch (err) {
     console.error('로그인 실패:', err);
     res.status(400).send(err);

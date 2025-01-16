@@ -11,7 +11,7 @@ exports.addToOrder = async (req, res) => {
     const userId = new mongoose.Types.ObjectId(decoded.userId);
 
     // 요청 본문에서 주문 데이터 가져오기
-    const { account, items, totalAmount } = req.body;
+    const { account, items, totalAmount, paymentStatus,  orderStatus} = req.body;
 
     if (!account || !items || !totalAmount) {
       return res.status(400).json({ message: '필수 정보가 누락되었습니다.' });
@@ -23,8 +23,8 @@ exports.addToOrder = async (req, res) => {
       account,
       items,
       totalAmount,
-      paymentStatus: '결제 대기',
-      orderStatus: '주문 완료',
+      paymentStatus,
+      orderStatus,
     });
 
     // 저장
@@ -81,8 +81,6 @@ exports.updateOrder = async (req, res) => {
     const updates = req.body; // 요청 본문에서 업데이트할 데이터 가져오기
 
     // 디버깅: 요청 데이터 확인
-    console.log("요청된 주문 ID:", id);
-    console.log("업데이트 데이터:", updates);
 
     // 주문 ID가 유효한 ObjectId인지 확인
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -99,12 +97,10 @@ exports.updateOrder = async (req, res) => {
     }
 
     // 디버깅: 찾은 주문 정보
-    console.log("찾은 주문 정보:", order);
 
     // 요청 본문에 포함된 필드만 업데이트
     Object.keys(updates).forEach((key) => {
       if (order[key] !== undefined) {
-        console.log(`업데이트: ${key}: ${order[key]} -> ${updates[key]}`);
         order[key] = updates[key];
       } else {
         console.warn(`알 수 없는 필드: ${key}`);

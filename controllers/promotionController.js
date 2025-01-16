@@ -24,8 +24,6 @@ const upload = multer({ storage: storage });
 // 프로모션 생성
 exports.createPromotion = async (req, res) => {
     try {
-      console.log('Request Body:', req.body); // req.body 내용 확인
-      console.log('Uploaded Files:', req.files); // req.files 내용 확인
   
       const token = req.headers['authorization']?.split(' ')[1];
       if (!token) {
