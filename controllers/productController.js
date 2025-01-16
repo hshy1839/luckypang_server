@@ -124,6 +124,10 @@ exports.getAllProducts = async (req, res) => {
 exports.getProduct = async (req, res) => {
     const { id } = req.params;
 
+    console.log('--- 요청 정보 ---');
+    console.log('요청 경로 매개변수:', id);
+    console.log('요청 헤더:', req.headers);
+    console.log('요청 본문:', req.body);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         console.error('유효하지 않은 제품 ID:', id);
@@ -146,6 +150,7 @@ exports.getProduct = async (req, res) => {
         }
 
         return res.status(200).json({ success: true, product });
+
     } catch (err) {
         console.error('제품 조회 중 오류:', err);
         return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
@@ -266,6 +271,7 @@ exports.updateProduct = async (req, res) => {
             product.sizeStock.M = sizeStock.M || 0;
             product.sizeStock.L = sizeStock.L || 0;
             product.sizeStock.XL = sizeStock.XL || 0;
+            product.sizeStock.free = sizeStock.free || 0;
         }
 
         await product.save();
