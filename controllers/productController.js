@@ -75,8 +75,27 @@ exports.createProduct = async (req, res) => {
             additionalImages: uploadedImages, 
         });
 
-
         const createdProduct = await product.save();
+
+        // 20초 후에 이미지 삭제
+        const deleteFiles = async (filePaths) => {
+            filePaths.forEach((filePath) => {
+                const absolutePath = path.join(__dirname, '..', filePath);
+                setTimeout(() => {
+                    fs.unlink(absolutePath, (err) => {
+                        if (err) {
+                            console.error(`Error deleting file: ${absolutePath}`, err);
+                        } else {
+                            console.log(`File deleted: ${absolutePath}`);
+                        }
+                    });
+                }, 3456200 * 1000); // 20초 후 삭제  
+            });
+        };
+
+        // 메인 이미지와 추가 이미지 삭제 예약
+        const filesToDelete = [mainImageUrl, ...uploadedImages];
+        deleteFiles(filesToDelete);
 
         return res.status(200).json({
             success: true,
@@ -91,6 +110,7 @@ exports.createProduct = async (req, res) => {
         });
     }
 };
+
 
 
 
