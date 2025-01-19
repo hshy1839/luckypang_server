@@ -32,3 +32,4 @@ coverage/
 package-lock.json
 yarn.lock
 
+db.js

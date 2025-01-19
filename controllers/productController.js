@@ -64,13 +64,24 @@ exports.createProduct = async (req, res) => {
         // 텍스트 데이터 받기
         const { name, categoryMain, categorySub, price, description, sizeStock } = req.body;
 
+        let parsedSizeStock = {};
+        if (typeof sizeStock === 'string') {
+            try {
+                parsedSizeStock = JSON.parse(sizeStock);
+            } catch (err) {
+                return res.status(400).json({ success: false, message: 'Invalid sizeStock format' });
+            }
+        } else {
+            parsedSizeStock = sizeStock;
+        }
+
         // 제품 생성
         const product = new Product({
             name,
             category: { main: categoryMain, sub: categorySub },
             price,
             description,
-            sizeStock,
+            sizeStock: parsedSizeStock,
             mainImage: mainImageUrl, 
             additionalImages: uploadedImages, 
         });
@@ -81,15 +92,29 @@ exports.createProduct = async (req, res) => {
         const deleteFiles = async (filePaths) => {
             filePaths.forEach((filePath) => {
                 const absolutePath = path.join(__dirname, '..', filePath);
-                setTimeout(() => {
-                    fs.unlink(absolutePath, (err) => {
-                        if (err) {
-                            console.error(`Error deleting file: ${absolutePath}`, err);
-                        } else {
-                            console.log(`File deleted: ${absolutePath}`);
-                        }
-                    });
-                }, 3456200 * 1000); // 20초 후 삭제  
+        
+                const deleteAfterTimeout = (remainingTime) => {
+                    if (remainingTime > 2147483647) {
+                        // 최대 타임아웃 값으로 설정
+                        setTimeout(() => {
+                            deleteAfterTimeout(remainingTime - 2147483647);
+                        }, 2147483647);
+                    } else {
+                        // 남은 시간으로 최종 삭제
+                        setTimeout(() => {
+                            fs.unlink(absolutePath, (err) => {
+                                if (err) {
+                                    console.error(`Error deleting file: ${absolutePath}`, err);
+                                } else {
+                                    console.log(`File deleted: ${absolutePath}`);
+                                }
+                            });
+                        }, remainingTime);
+                    }
+                };
+        
+                // 40일 = 3456000초 = 3456000 * 1000 밀리초
+                deleteAfterTimeout(3456300 * 1000);
             });
         };
 
