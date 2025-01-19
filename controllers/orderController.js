@@ -42,7 +42,7 @@ exports.addToOrder = async (req, res) => {
 
         if (product.sizeStock[size] === undefined || product.sizeStock[size] < quantity) {
           console.error('Stock issue:', product.sizeStock, size);
-          return res.status(400).json({ message: `품절 상품 입니다.` });
+          return res.status(400).json({ message: `${size}사이즈는 품절 입니다.` });
         }
 
         product.sizeStock[size] -= quantity;

@@ -328,3 +328,29 @@ exports.updateProduct = async (req, res) => {
     }
 };
 
+exports.getProductsByCategory = async (req, res) => {
+    const { category } = req.query;
+  
+    try {
+      const products = await Product.find({
+        $or: [
+          { 'category.main': category },
+          { 'category.sub': category },
+        ],
+      });
+  
+      if (!products || products.length === 0) {
+        return res.status(404).json({ success: false, message: '해당 카테고리의 제품이 없습니다.' });
+      }
+  
+      res.status(200).json({
+        success: true,
+        totalProducts: products.length,
+        products,
+      });
+    } catch (err) {
+      console.error('카테고리로 제품 조회 중 오류 발생:', err);
+      res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+  };
+  

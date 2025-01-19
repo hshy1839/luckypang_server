@@ -4,7 +4,8 @@ const {
     getAllProducts, 
     deleteProduct, 
     getProduct, 
-    updateProduct
+    updateProduct,
+    getProductsByCategory
 } = require('../controllers/productController');
 
 const router = express.Router();
@@ -46,6 +47,26 @@ router.post('/products/productCreate', upload, createProduct);
 router.get('/products/allProduct', getAllProducts);
 // 상품 특정 조회
 router.get('/products/Product/:id', getProduct);
+//카테고리 별 상품 조회
+router.get('/products/allProduct/category', (req, res, next) => {
+    // 쿼리 파라미터에서 mainCategory와 subCategory 추출
+    const { category } = req.query;
+
+    // 디버깅용 로그 출력
+    console.log(`[Category Query] Main: ${category || 'N/A'}, Sub: ${category || 'N/A'}`);
+
+    // mainCategory 또는 subCategory가 하나라도 존재하는 경우만 진행
+    if (!getProductsByCategory) {
+        return res.status(400).json({
+            success: false,
+            message: '카테고리 정보를 제공해야 합니다. ',
+        });
+    }
+
+    // 다음 미들웨어로 요청 전달
+    next();
+}, getProductsByCategory);
+
 // 상품 삭제
 router.delete('/products/delete/:id', deleteProduct);
 // 상품 수정
