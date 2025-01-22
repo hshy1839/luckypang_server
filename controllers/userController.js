@@ -256,6 +256,43 @@ exports.updateUserInfo = async (req, res) => {
 };
 
 
+exports.updateIsActive = async (req, res) => {
+  const { id } = req.params;  // URL 파라미터로 받은 유저 ID
+  const { is_active } = req.body;  // 요청 본문에서 받은 업데이트 정보
+
+  // Authorization 헤더에서 토큰 추출
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ success: false, message: '로그인 정보가 없습니다.' });
+  }
+
+  try {
+    // 환경 변수에서 JWT_SECRET 가져오기
+    const decoded = jwt.verify(token, JWT_SECRET);  // process.env.JWT_SECRET 사용
+    const userId = decoded.userId;
+
+    // 유저 정보 찾기
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
+    }
+
+    // is_active 값을 업데이트
+    if (is_active !== undefined) {
+      user.is_active = is_active;
+    }
+
+    // 변경 사항 저장
+    await user.save();
+
+    return res.status(200).json({ success: true, message: '유저 정보가 업데이트 되었습니다.' });
+  } catch (err) {
+    console.error('유저 정보 업데이트 중 오류 발생:', err);
+    return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+};
+
+
 // 유저 삭제 처리
 exports.deleteUser = async (req, res) => {
   const { id } = req.params;  // URL 파라미터에서 ID 받기

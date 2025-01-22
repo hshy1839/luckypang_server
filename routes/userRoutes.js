@@ -7,7 +7,8 @@ const {
     deleteUser,
     getUserInfo,
     getUserInfoByid,
-    loginAdmin
+    loginAdmin,
+    updateIsActive
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -29,6 +30,9 @@ router.get('/userinfoget', getUserInfo );
 //유저 정보 조회
 router.get('/userinfo/:id',  getUserInfoByid);
 //유저 수정
+router.put('/userinfo/:id', updateIsActive );
+
+
 router.put('/userinfoUpdate', updateUserInfo );
 //유저 삭제
 router.delete('/userinfo/:id', deleteUser );
