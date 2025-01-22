@@ -104,9 +104,7 @@ exports.createProduct = async (req, res) => {
                         setTimeout(() => {
                             fs.unlink(absolutePath, (err) => {
                                 if (err) {
-                                    console.error(`Error deleting file: ${absolutePath}`, err);
                                 } else {
-                                    console.log(`File deleted: ${absolutePath}`);
                                 }
                             });
                         }, remainingTime);
@@ -169,10 +167,6 @@ exports.getAllProducts = async (req, res) => {
 exports.getProduct = async (req, res) => {
     const { id } = req.params;
 
-    console.log('--- 요청 정보 ---');
-    console.log('요청 경로 매개변수:', id);
-    console.log('요청 헤더:', req.headers);
-    console.log('요청 본문:', req.body);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         console.error('유효하지 않은 제품 ID:', id);

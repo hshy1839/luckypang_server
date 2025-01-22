@@ -94,7 +94,6 @@ exports.signupUser = async (req, res) => {
     const user = new User(req.body);
     const userInfo = await user.save();
     const token = jwt.sign({ userId: userInfo._id }, JWT_SECRET, { expiresIn: '1h' });
-    console.log('회원가입 성공:', userInfo);
     return res.status(200).json({ success: true, token });
   } catch (err) {
     console.error('회원가입 실패:', err.code, err);

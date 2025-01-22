@@ -126,7 +126,6 @@ exports.getShippingById = async (req, res) => {
       return res.status(400).json({ message: '유효하지 않은 사용자 ID 형식입니다.' });
     }
 
-    console.log('Querying Shipping with userId:', userObjectId);
 
     // 해당 유저의 모든 배송지 정보 조회
     const shippings = await Shipping.find({ userId: userObjectId });

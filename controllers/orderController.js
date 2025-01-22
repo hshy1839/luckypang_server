@@ -147,7 +147,6 @@ exports.updateOrder = async (req, res) => {
     const updatedOrder = await order.save();
 
     // 디버깅: 저장된 업데이트된 주문 정보
-    console.log("업데이트된 주문 정보:", updatedOrder);
 
     res.status(200).json({ message: '주문이 성공적으로 업데이트되었습니다.', order: updatedOrder });
   } catch (error) {
