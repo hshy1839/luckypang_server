@@ -206,3 +206,26 @@ exports.getQuestionById = async (req, res) => {
     });
   }
 };
+
+// 모든 답변 없는 질문 개수 조회
+exports.getUnansweredQuestionsCount = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: '토큰이 없습니다.' });
+    }
+
+    jwt.verify(token, JWT_SECRET);
+
+    // 답변 없는 질문 필터링 (answers 배열이 비어있는 질문 찾기)
+    const unansweredQuestionsCount = await qnaQuestion.countDocuments({ answers: { $size: 0 } });
+
+    res.status(200).json({
+      success: true,
+      unansweredQuestionsCount,
+    });
+  } catch (err) {
+    console.error('답변 없는 질문 조회 실패:', err);
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+};

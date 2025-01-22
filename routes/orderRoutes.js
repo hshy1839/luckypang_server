@@ -4,6 +4,7 @@ const {
     getOrdersByUser,
     getAllOrders,
     updateOrder,
+    getPendingPaymentOrdersCount,
 } = require('../controllers/orderController');
 
 const router = express.Router();
@@ -20,6 +21,7 @@ router.get('/orderByUser', getOrdersByUser);
 router.get('/orderAll', getAllOrders);
 router.put('/editPayment/:id', updateOrder);
 router.put('/editOrder/:id', updateOrder);
+router.get('/order/pendingCount', getPendingPaymentOrdersCount);
 
 module.exports = router;
 

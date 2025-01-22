@@ -4,6 +4,7 @@ const {
     getQuestion,
     getAllQuestions,
     getQuestionById,
+    getUnansweredQuestionsCount
 } = require('../controllers/qnaQuestionController');
 const {
     addAnswer, // 답변 등록 함수 추가
@@ -23,6 +24,8 @@ router.post('/qnaQuestion', createQuestion);
 router.get('/qnaQuestion/getinfo', getQuestion);
 router.get('/qnaQuestion/getinfoAll', getAllQuestions);
 router.get('/qnaQuestion/getinfoByid/:id', getQuestionById);
+router.get('/qnaQuestion/unansweredCount', getUnansweredQuestionsCount);
+
 
 // 답변 관련 라우트
 router.post('/qnaQuestion/addAnswer/:id', addAnswer); // 특정 질문에 답변 추가

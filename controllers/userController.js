@@ -323,3 +323,64 @@ exports.deleteUser = async (req, res) => {
       return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };
+
+// 비밀번호 변경 컨트롤러
+exports.changePassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body; // 요청 본문에서 이전 및 새 비밀번호 추출
+
+  // Authorization 헤더에서 토큰 추출
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ success: false, message: '로그인 정보가 없습니다.' });
+  }
+
+  try {
+    // JWT 토큰 검증 및 사용자 ID 추출
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    // 사용자 검색
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    // 기존 비밀번호 검증
+    const isMatch = await user.comparePassword(oldPassword);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: '기존 비밀번호가 일치하지 않습니다.' });
+    }
+
+    // 새 비밀번호 저장
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
+  } catch (err) {
+    console.error('비밀번호 변경 중 오류 발생:', err);
+    return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+};
+
+// 비활성 유저 개수 조회
+exports.getInactiveUsersCount = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: '토큰이 없습니다.' });
+    }
+
+    jwt.verify(token, JWT_SECRET);
+
+    // is_active가 false인 유저 수 계산
+    const inactiveUsersCount = await User.countDocuments({ is_active: false });
+
+    res.status(200).json({
+      success: true,
+      inactiveUsersCount,
+    });
+  } catch (err) {
+    console.error('비활성 유저 개수 조회 실패:', err);
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.', error: err });
+  }
+};

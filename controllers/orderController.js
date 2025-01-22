@@ -157,5 +157,26 @@ exports.updateOrder = async (req, res) => {
 };
 
 
+exports.getPendingPaymentOrdersCount = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: '토큰이 없습니다.' });
+    }
+
+    jwt.verify(token, JWT_SECRET);
+
+    // 결제 대기 상태의 주문 개수 계산
+    const pendingOrdersCount = await Order.countDocuments({ paymentStatus: '결제 대기' });
+
+    res.status(200).json({
+      success: true,
+      pendingOrdersCount,
+    });
+  } catch (error) {
+    console.error('결제 대기 주문 개수 조회 중 오류:', error);
+    res.status(500).json({ message: '서버 오류로 인해 결제 대기 주문 개수를 가져올 수 없습니다.', error });
+  }
+};
 
 

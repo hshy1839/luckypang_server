@@ -8,7 +8,9 @@ const {
     getUserInfo,
     getUserInfoByid,
     loginAdmin,
-    updateIsActive
+    updateIsActive,
+    changePassword,
+    getInactiveUsersCount,
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -31,8 +33,8 @@ router.get('/userinfoget', getUserInfo );
 router.get('/userinfo/:id',  getUserInfoByid);
 //유저 수정
 router.put('/userinfo/:id', updateIsActive );
-
-
+router.get('/inactiveUsersCount', getInactiveUsersCount);
+router.put('/changePassword', changePassword);
 router.put('/userinfoUpdate', updateUserInfo );
 //유저 삭제
 router.delete('/userinfo/:id', deleteUser );
