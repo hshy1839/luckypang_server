@@ -1,7 +1,8 @@
 const express = require('express');
 const { 
     addToShipping, 
-    getShipping
+    getShipping,
+    getShippingById
 } = require('../controllers/shippingController');
 
 const router = express.Router();
@@ -15,6 +16,7 @@ router.use((req, res, next) => {
 // 배송지 추가
 router.post('/shipping', addToShipping);
 router.get('/shippinginfo', getShipping);
+router.get('/shippinginfo/:id', getShippingById);
 
 module.exports = router;
 
