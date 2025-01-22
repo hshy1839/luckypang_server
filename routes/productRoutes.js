@@ -37,7 +37,6 @@ const upload = multer({ storage: storage }).fields([
 
 // 디버깅 로그 추가: 요청 경로 확인
 router.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
     next();
 });
 
@@ -53,7 +52,6 @@ router.get('/products/allProduct/category', (req, res, next) => {
     const { category } = req.query;
 
     // 디버깅용 로그 출력
-    console.log(`[Category Query] Main: ${category || 'N/A'}, Sub: ${category || 'N/A'}`);
 
     // mainCategory 또는 subCategory가 하나라도 존재하는 경우만 진행
     if (!getProductsByCategory) {
