@@ -25,7 +25,7 @@ const promotionRoutes = require('./routes/promotionRoutes');
 // CORS 설정 (여러 도메인 허용)
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || /^http:\/\/13\.211\.38\.192(:\d+)?$/.test(origin)) {
+    if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || /^http:\/\/3\.35\.233\.121(:\d+)?$/.test(origin)) {
       // origin이 없거나 localhost 또는 13.211.38.192 도메인 및 포트일 경우 허용
       callback(null, true);
     } else {
