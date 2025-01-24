@@ -25,17 +25,22 @@ const promotionRoutes = require('./routes/promotionRoutes');
 // CORS 설정 (여러 도메인 허용)
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || /^http:\/\/3\.35\.233\.121(:\d+)?$/.test(origin)) {
-      // origin이 없거나 localhost 또는 13.211.38.192 도메인 및 포트일 경우 허용
+    const allowedOrigins = [
+      /^http:\/\/localhost(:\d+)?$/,
+      /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+      /^http:\/\/3\.39\.192\.73(:\d+)?$/
+    ];
+    if (!origin || allowedOrigins.some(regex => regex.test(origin))) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true, // 인증 정보(Cookies 등)를 포함한 요청 허용
-  allowedHeaders: 'Content-Type, Authorization'
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // OPTIONS 추가
+  credentials: true, // 인증 정보 포함 허용
+  allowedHeaders: 'Content-Type, Authorization' // 허용된 헤더 지정
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
