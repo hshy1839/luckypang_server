@@ -29,12 +29,13 @@ exports.loginAdmin = async (req, res) => {
       });
     }
 
-    if (user.user_type !== '1') {
+    if (!['1', '2'].includes(user.user_type)) {
       return res.json({
         loginSuccess: false,
-        message: '관리자가 아닙니다.',
+        message: '관리자 또는 부관리자가 아닙니다.',
       });
     }
+    
 
     const token = jwt.sign(
       { userId: user._id, username: user.username, phoneNumber: user.phoneNumber },
@@ -257,7 +258,7 @@ exports.updateUserInfo = async (req, res) => {
 
 exports.updateIsActive = async (req, res) => {
   const { id } = req.params;  // URL 파라미터로 받은 유저 ID
-  const { is_active } = req.body;  // 요청 본문에서 받은 업데이트 정보
+  const { is_active, user_type } = req.body;  // 요청 본문에서 받은 업데이트 정보
 
   // Authorization 헤더에서 토큰 추출
   const token = req.headers.authorization?.split(' ')[1];
@@ -267,7 +268,7 @@ exports.updateIsActive = async (req, res) => {
 
   try {
     // 환경 변수에서 JWT_SECRET 가져오기
-    const decoded = jwt.verify(token, JWT_SECRET);  // process.env.JWT_SECRET 사용
+    const decoded = jwt.verify(token, JWT_SECRET);  // JWT_SECRET 사용
     const userId = decoded.userId;
 
     // 유저 정보 찾기
@@ -276,9 +277,14 @@ exports.updateIsActive = async (req, res) => {
       return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
     }
 
-    // is_active 값을 업데이트
+    // is_active 값 업데이트 (변경 사항이 있는 경우)
     if (is_active !== undefined) {
       user.is_active = is_active;
+    }
+
+    // user_type 값 업데이트 (변경 사항이 있는 경우)
+    if (user_type !== undefined) {
+      user.user_type = user_type;
     }
 
     // 변경 사항 저장
@@ -290,6 +296,7 @@ exports.updateIsActive = async (req, res) => {
     return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };
+
 
 
 // 유저 삭제 처리
