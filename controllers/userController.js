@@ -79,7 +79,6 @@ exports.loginUser = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, username: user.username, phoneNumber: user.phoneNumber },
       JWT_SECRET,
-      { expiresIn: '48h' }
     );
 
     res.status(200).json({ loginSuccess: true, token });
@@ -94,7 +93,7 @@ exports.signupUser = async (req, res) => {
   try {
     const user = new User(req.body);
     const userInfo = await user.save();
-    const token = jwt.sign({ userId: userInfo._id }, JWT_SECRET, { expiresIn: null });
+    const token = jwt.sign({ userId: userInfo._id }, JWT_SECRET, { expiresIn: '3h' });
     return res.status(200).json({ success: true, token });
   } catch (err) {
     console.error('회원가입 실패:', err.code, err);
@@ -323,7 +322,10 @@ exports.deleteUser = async (req, res) => {
       // 해당 유저 삭제
       await User.findByIdAndDelete(id);
 
-      return res.status(200).json({ success: true, message: '유저가 삭제되었습니다.' });
+      // 연관된 배송지 정보 삭제
+      await Shipping.deleteMany({ userId: id });
+
+      return res.status(200).json({ success: true, message: '유저와 관련된 모든 정보가 삭제되었습니다.' });
   } catch (err) {
       console.error('유저 삭제 중 오류 발생:', err);
       return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
