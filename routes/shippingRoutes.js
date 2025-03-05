@@ -2,7 +2,8 @@ const express = require('express');
 const { 
     addToShipping, 
     getShipping,
-    getShippingById
+    getShippingById,
+    updateToShipping
 } = require('../controllers/shippingController');
 
 const router = express.Router();
@@ -16,7 +17,7 @@ router.use((req, res, next) => {
 router.post('/shipping', addToShipping);
 router.get('/shippinginfo', getShipping);
 router.get('/shippinginfo/:id', getShippingById);
-
+router.put('/shipping/update', updateToShipping);
 module.exports = router;
 
 
