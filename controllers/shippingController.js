@@ -137,10 +137,10 @@ exports.getShippingById = async (req, res) => {
     // 데이터를 사람이 읽기 쉽게 변환
     const shippingDetails = shippings.map((shipping) => {
       const {
-        shippingAddress: { name, phone, address, address2, postalCode },
+        shippingAddress: {  address, address2 },
       } = shipping;
 
-      return `수령인: ${name}, 연락처: ${phone}, 주소: ${address}, 추가주소: ${address2}, 우편번호: ${postalCode}`;
+      return `주소: ${address}, 상세주소: ${address2}`;
     });
 
     res.status(200).json({
