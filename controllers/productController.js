@@ -29,9 +29,9 @@ const upload = multer({ storage: storage });
 
 
 
+// 상품 생성 (category 통합)
 exports.createProduct = async (req, res) => {
     try {
-        // JWT 토큰 확인
         const token = req.headers['authorization']?.split(' ')[1];
         if (!token) {
             return res.status(403).json({ success: false, message: 'Token is required' });
@@ -48,21 +48,20 @@ exports.createProduct = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Token does not contain userId' });
         }
 
-        // 파일 처리 후 저장된 경로 추출
         let mainImageUrl = '';
         if (req.files && req.files.mainImage) {
-            mainImageUrl = '/uploads/product_main_images/' + req.files.mainImage[0].filename; // 로컬에 저장된 경로
+            mainImageUrl = '/uploads/product_main_images/' + req.files.mainImage[0].filename;
         }
 
         const uploadedImages = [];
         if (req.files && req.files.additionalImages) {
             req.files.additionalImages.forEach(file => {
-                uploadedImages.push('/uploads/product_detail_images/' + file.filename); // 로컬에 저장된 경로들
+                uploadedImages.push('/uploads/product_detail_images/' + file.filename);
             });
         }
 
         // 텍스트 데이터 받기
-        const { name, categoryMain, categorySub, price, description, sizeStock } = req.body;
+        const { name, category, price, description, sizeStock } = req.body;
 
         let parsedSizeStock = {};
         if (typeof sizeStock === 'string') {
@@ -75,10 +74,10 @@ exports.createProduct = async (req, res) => {
             parsedSizeStock = sizeStock;
         }
 
-        // 제품 생성
+        // 제품 생성 (카테고리 단일 필드 사용)
         const product = new Product({
             name,
-            category: { main: categoryMain, sub: categorySub },
+            category,  // 통합된 카테고리 필드
             price,
             description,
             sizeStock: parsedSizeStock,
@@ -87,38 +86,6 @@ exports.createProduct = async (req, res) => {
         });
 
         const createdProduct = await product.save();
-
-        // 20초 후에 이미지 삭제
-        const deleteFiles = async (filePaths) => {
-            filePaths.forEach((filePath) => {
-                const absolutePath = path.join(__dirname, '..', filePath);
-        
-                const deleteAfterTimeout = (remainingTime) => {
-                    if (remainingTime > 2147483647) {
-                        // 최대 타임아웃 값으로 설정
-                        setTimeout(() => {
-                            deleteAfterTimeout(remainingTime - 2147483647);
-                        }, 2147483647);
-                    } else {
-                        // 남은 시간으로 최종 삭제
-                        setTimeout(() => {
-                            fs.unlink(absolutePath, (err) => {
-                                if (err) {
-                                } else {
-                                }
-                            });
-                        }, remainingTime);
-                    }
-                };
-        
-                // 40일 = 3456000초 = 3456000 * 1000 밀리초
-                deleteAfterTimeout(3456300 * 1000);
-            });
-        };
-
-        // 메인 이미지와 추가 이미지 삭제 예약
-        const filesToDelete = [mainImageUrl, ...uploadedImages];
-        deleteFiles(filesToDelete);
 
         return res.status(200).json({
             success: true,
@@ -133,6 +100,7 @@ exports.createProduct = async (req, res) => {
         });
     }
 };
+
 
 
 
@@ -293,25 +261,15 @@ exports.updateProduct = async (req, res) => {
         product.name = name;
         product.description = description;
         product.price = price;
+        product.category = category;  // 단일 필드로 저장
 
-        // categoryMain과 categorySub를 분리하여 저장
-        if (category && category.main && category.sub) {
-            product.category.main = category.main;  // 상위 카테고리
-            product.category.sub = category.sub;    // 하위 카테고리
-        } else if (category && category.main) {
-            product.category.main = category.main;  // 상위 카테고리만 있는 경우
-            product.category.sub = '';             // 하위 카테고리 비워두기
-        } else {
-            return res.status(400).json({ success: false, message: '카테고리 정보가 부족합니다.' });
-        }
-
-        if (sizeStock) {
-            product.sizeStock.S = sizeStock.S || 0;
-            product.sizeStock.M = sizeStock.M || 0;
-            product.sizeStock.L = sizeStock.L || 0;
-            product.sizeStock.XL = sizeStock.XL || 0;
-            product.sizeStock.free = sizeStock.free || 0;
-        }
+        // if (sizeStock) {
+        //     product.sizeStock.S = sizeStock.S || 0;
+        //     product.sizeStock.M = sizeStock.M || 0;
+        //     product.sizeStock.L = sizeStock.L || 0;
+        //     product.sizeStock.XL = sizeStock.XL || 0;
+        //     product.sizeStock.free = sizeStock.free || 0;
+        // }
 
         await product.save();
 
@@ -322,29 +280,26 @@ exports.updateProduct = async (req, res) => {
     }
 };
 
+
+// 특정 카테고리의 제품 조회 (단일 category 필드 기준)
 exports.getProductsByCategory = async (req, res) => {
     const { category } = req.query;
   
     try {
-      const products = await Product.find({
-        $or: [
-          { 'category.main': category },
-          { 'category.sub': category },
-        ],
-      });
-  
-      if (!products || products.length === 0) {
-        return res.status(404).json({ success: false, message: '해당 카테고리의 제품이 없습니다.' });
-      }
-  
-      res.status(200).json({
-        success: true,
-        totalProducts: products.length,
-        products,
-      });
+        const products = await Product.find({ category });
+
+        if (!products || products.length === 0) {
+            return res.status(404).json({ success: false, message: '해당 카테고리의 제품이 없습니다.' });
+        }
+
+        res.status(200).json({
+            success: true,
+            totalProducts: products.length,
+            products,
+        });
     } catch (err) {
-      console.error('카테고리로 제품 조회 중 오류 발생:', err);
-      res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+        console.error('카테고리로 제품 조회 중 오류 발생:', err);
+        res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
-  };
-  
+};
+
