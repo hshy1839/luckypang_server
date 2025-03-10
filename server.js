@@ -58,6 +58,11 @@ app.listen(8865, () => {
 });
 
 connectDB();
+app.use((req, res, next) => {
+  console.log(`Request received: ${req.method} ${req.url} from ${req.ip}`);
+  next();
+});
+
 
 app.use('/api/users', userRoutes);
 app.use('/api/users', noticeRoutes);
