@@ -31,7 +31,6 @@ app.use(cors({
       /^http:\/\/3\.39\.192\.73(:\d+)?$/,
       /^http:\/\/15\.165\.107\.67(:\d+)?$/,
       /^http:\/\/3\.35\.233\.121(:\d+)?$/,
-
       /^http:\/\/13\.125\.251\.222(:\d+)?$/,
     ];
     if (!origin || allowedOrigins.some(regex => regex.test(origin))) {
@@ -67,10 +66,10 @@ app.use((req, res, next) => {
 app.use('/api/users', userRoutes);
 app.use('/api/users', noticeRoutes);
 app.use('/api', productRoutes);
-app.use('/api', cartRoutes);
-app.use('/api', orderRoutes);
+// app.use('/api', cartRoutes);
+// app.use('/api', orderRoutes);
 app.use('/api', shippingRoutes);
-app.use('/api', qnaRoutes);
+// app.use('/api', qnaRoutes);
 app.use('/api', totalRoutes);
-app.use('/api', couponRoutes);
+// app.use('/api', couponRoutes);
 app.use('/api', promotionRoutes);
