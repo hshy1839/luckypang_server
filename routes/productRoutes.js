@@ -32,7 +32,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage }).fields([
     { name: 'mainImage', maxCount: 1 },
-    { name: 'additionalImages', maxCount: 10 }
+    { name: 'additionalImages', maxCount: 20 }
 ]);
 
 // 디버깅 로그 추가: 요청 경로 확인

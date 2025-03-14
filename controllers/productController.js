@@ -25,7 +25,15 @@ const storage = multer.diskStorage({
 
 
   // multer 설정
-const upload = multer({ storage: storage });
+  const upload = multer({
+    storage: storage,
+    limits: {
+        files: 20, // ✅ 업로드할 수 있는 총 파일 개수 제한 (20개로 증가)
+    },
+}).fields([
+    { name: 'mainImage', maxCount: 1 }, // ✅ 대표 이미지 1개
+    { name: 'additionalImages', maxCount: 20 }, // ✅ 추가 이미지 20개
+]);
 
 
 
