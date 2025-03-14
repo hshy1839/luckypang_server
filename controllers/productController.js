@@ -172,81 +172,63 @@ exports.getProduct = async (req, res) => {
     }
 };
 
-// 제품 삭제
 exports.deleteProduct = async (req, res) => {
     const { id } = req.params;
 
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
-        return res.status(401).json({ success: false, message: '로그인 정보가 없습니다.' });
+        return res.status(401).json({ success: false, message: "로그인 정보가 없습니다." });
     }
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
 
+        // 1️⃣ 제품 조회
         const product = await Product.findById(id);
         if (!product) {
-            return res.status(404).json({ success: false, message: '제품을 찾을 수 없습니다.' });
+            return res.status(404).json({ success: false, message: "제품을 찾을 수 없습니다." });
         }
 
-    
-        if (Array.isArray(product.mainImage)) {
-            await Promise.all(
-                product.mainImage.map((image) => {
-                    if (typeof image === 'string') {
-                        const imagePath = path.join(__dirname, '..', image);
-                        return new Promise((resolve, reject) => {
-                            fs.unlink(imagePath, (err) => {
-                                if (err) {
-                                    console.error('메인 이미지 삭제 실패:', err);
-                                    reject(err);
-                                } else {
-                                    resolve();
-                                }
-                            });
-                        });
-                    } else {
-                        console.warn('올바르지 않은 이미지 경로:', image);
-                        return Promise.resolve();
-                    }
-                })
-            );
+        // 2️⃣ 메인 이미지 삭제 (이미지가 없어도 삭제 진행)
+        if (product.mainImage && typeof product.mainImage === "string") {
+            const imagePath = path.join(__dirname, "..", product.mainImage);
+            try {
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                }
+            } catch (err) {
+                console.warn("메인 이미지 삭제 중 오류 발생 (이미지 없음)", err);
+            }
         }
-        
 
-        // 추가 이미지 삭제
+        // 3️⃣ 추가 이미지 삭제 (배열이 비어 있거나 없을 수도 있음)
         if (Array.isArray(product.additionalImages)) {
             await Promise.all(
                 product.additionalImages.map((image) => {
-                    if (typeof image === 'string') {
-                        const imagePath = path.join(__dirname, '..', image);
-                        return new Promise((resolve, reject) => {
-                            fs.unlink(imagePath, (err) => {
-                                if (err) {
-                                    console.error('추가 이미지 삭제 실패:', err);
-                                    reject(err);
-                                } else {
-                                    resolve();
-                                }
-                            });
-                        });
-                    } else {
-                        console.warn('올바르지 않은 이미지 경로:', image);
-                        return Promise.resolve();
+                    if (typeof image === "string") {
+                        const imagePath = path.join(__dirname, "..", image);
+                        try {
+                            if (fs.existsSync(imagePath)) {
+                                fs.unlinkSync(imagePath);
+                            }
+                        } catch (err) {
+                            console.warn("추가 이미지 삭제 중 오류 발생 (이미지 없음)", err);
+                        }
                     }
                 })
             );
         }
 
-        // 제품 삭제
+        // 4️⃣ 제품 데이터 삭제
         await Product.findByIdAndDelete(id);
 
-        return res.status(200).json({ success: true, message: '제품이 삭제되었습니다.' });
+        return res.status(200).json({ success: true, message: "제품이 삭제되었습니다." });
     } catch (err) {
-        console.error('제품 삭제 중 오류 발생:', err);
-        return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+        console.error("제품 삭제 중 오류 발생:", err);
+        return res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
     }
 };
+
 
 // 제품 수정
 exports.updateProduct = async (req, res) => {
