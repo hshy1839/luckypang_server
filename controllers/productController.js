@@ -189,31 +189,40 @@ exports.deleteProduct = async (req, res) => {
             return res.status(404).json({ success: false, message: "제품을 찾을 수 없습니다." });
         }
 
-        // 2️⃣ 메인 이미지 삭제 (이미지가 없어도 삭제 진행)
-        if (product.mainImage && typeof product.mainImage === "string") {
-            const imagePath = path.join(__dirname, "..", product.mainImage);
+        // 🔹 이미지 삭제 함수 (파일이 존재하면 삭제, 없으면 오류 무시)
+        const deleteFile = async (filePath) => {
             try {
-                if (fs.existsSync(imagePath)) {
-                    fs.unlinkSync(imagePath);
+                const absolutePath = path.resolve(__dirname, "..", filePath.replace(/^\/+/, ""));
+                if (fs.existsSync(absolutePath)) {
+                    await fs.promises.unlink(absolutePath);
+                    console.log(`✅ 파일 삭제 성공: ${absolutePath}`);
+                } else {
+                    console.warn(`⚠️ 파일이 존재하지 않음: ${absolutePath}`);
                 }
             } catch (err) {
-                console.warn("메인 이미지 삭제 중 오류 발생 (이미지 없음)", err);
+                console.error(`❌ 파일 삭제 중 오류 발생: ${filePath}`, err);
             }
+        };
+
+        // 2️⃣ 메인 이미지 삭제 (경로 확인 후 삭제)
+        if (Array.isArray(product.mainImage)) {
+            await Promise.all(
+                product.mainImage.map(async (image) => {
+                    if (typeof image === "string") {
+                        console.log("🔹 삭제 시도: mainImage →", image);
+                        await deleteFile(image);
+                    }
+                })
+            );
         }
 
-        // 3️⃣ 추가 이미지 삭제 (배열이 비어 있거나 없을 수도 있음)
+        // 3️⃣ 추가 이미지 삭제 (비동기 방식)
         if (Array.isArray(product.additionalImages)) {
             await Promise.all(
-                product.additionalImages.map((image) => {
+                product.additionalImages.map(async (image) => {
                     if (typeof image === "string") {
-                        const imagePath = path.join(__dirname, "..", image);
-                        try {
-                            if (fs.existsSync(imagePath)) {
-                                fs.unlinkSync(imagePath);
-                            }
-                        } catch (err) {
-                            console.warn("추가 이미지 삭제 중 오류 발생 (이미지 없음)", err);
-                        }
+                        console.log("🔹 삭제 시도: additionalImage →", image);
+                        await deleteFile(image);
                     }
                 })
             );
@@ -224,7 +233,7 @@ exports.deleteProduct = async (req, res) => {
 
         return res.status(200).json({ success: true, message: "제품이 삭제되었습니다." });
     } catch (err) {
-        console.error("제품 삭제 중 오류 발생:", err);
+        console.error("❌ 제품 삭제 중 오류 발생:", err);
         return res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
     }
 };
