@@ -32,6 +32,7 @@ app.use(cors({
       /^http:\/\/15\.165\.107\.67(:\d+)?$/,
       /^http:\/\/3\.35\.233\.121(:\d+)?$/,
       /^http:\/\/13\.125\.251\.222(:\d+)?$/,
+      /^http:\/\/15\.164\.155\.205(:\d+)?$/,
     ];
     if (!origin || allowedOrigins.some(regex => regex.test(origin))) {
       callback(null, true);
