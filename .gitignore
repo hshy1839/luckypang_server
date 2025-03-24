@@ -33,3 +33,6 @@ package-lock.json
 yarn.lock
 
 db.js
+
+# 업로드 이미지 폴더
+uploads/

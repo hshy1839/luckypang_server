@@ -7,20 +7,22 @@ const fs = require('fs');
 const mongoose = require("mongoose");
 
 
+const { v4: uuidv4 } = require('uuid');
+
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // 파일의 fieldname에 따라 저장 경로를 다르게 설정
-        if (file.fieldname === 'mainImage') {
-            cb(null, 'uploads/product_main_images/'); // mainImage는 product_main_images 폴더에 저장
-        } else if (file.fieldname === 'additionalImages') {
-            cb(null, 'uploads/product_detail_images/'); // additionalImages는 product_detail_images 폴더에 저장
-        } else {
-            cb(new Error('Invalid field name'), null); // 유효하지 않은 필드명이면 에러
-        }
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname)); // 파일명에 타임스탬프 추가
-    },
+  destination: (req, file, cb) => {
+    if (file.fieldname === 'mainImage') {
+      cb(null, 'uploads/product_main_images/');
+    } else if (file.fieldname === 'additionalImages') {
+      cb(null, 'uploads/product_detail_images/');
+    } else {
+      cb(new Error('Invalid field name'), null);
+    }
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${uuidv4()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  },
 });
 
 
