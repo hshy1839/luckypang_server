@@ -287,7 +287,7 @@ exports.getProductsByCategory = async (req, res) => {
     const { category } = req.query;
   
     try {
-        const products = await Product.find({ category });
+        const products = await Product.find({ category }).sort({ createdAt: -1 });;
 
         if (!products || products.length === 0) {
             return res.status(404).json({ success: false, message: '해당 카테고리의 제품이 없습니다.' });
