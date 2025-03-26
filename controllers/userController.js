@@ -91,10 +91,22 @@ exports.loginUser = async (req, res) => {
 // 회원가입 컨트롤러
 exports.signupUser = async (req, res) => {
   try {
+    const { phoneNumber } = req.body;
+
+    // 🔐 12자리 이상이면 에러 처리
+    if (phoneNumber && phoneNumber.length > 11) {
+      return res.status(400).json({
+        success: false,
+        message: "휴대폰 번호는 12자 이하로 입력해주세요.",
+      });
+    }
+
     const user = new User(req.body);
     const userInfo = await user.save();
+
     const token = jwt.sign({ userId: userInfo._id }, JWT_SECRET, { expiresIn: '3h' });
     return res.status(200).json({ success: true, token });
+
   } catch (err) {
     console.error('회원가입 실패:', err.code, err);
 
@@ -110,6 +122,7 @@ exports.signupUser = async (req, res) => {
     return res.status(500).json({ success: false, err });
   }
 };
+
 
 //모든 유저 정보 조회
 exports.getAllUsersInfo = async (req, res) => {
