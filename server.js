@@ -53,9 +53,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 
+const port = 7778;
 
-app.listen(8865, () => {
-  console.log('listening to http://localhost:8865');
+app.listen(port, () => {
+  console.log(`listening to http://localhost:${port}`);
 });
 
 connectDB();
