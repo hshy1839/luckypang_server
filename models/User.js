@@ -22,7 +22,7 @@ const userSchema = mongoose.Schema({
     },
     is_active: {
         type: Boolean,
-        default: false, 
+        default: true, 
     },
     user_type: {
         type: String,

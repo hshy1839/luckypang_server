@@ -71,26 +71,16 @@ exports.createProduct = async (req, res) => {
         }
 
         // 텍스트 데이터 받기
-        const { name, category, price, description, sizeStock } = req.body;
+        const { name, category, price, description } = req.body;
 
-        let parsedSizeStock = {};
-        if (typeof sizeStock === 'string') {
-            try {
-                parsedSizeStock = JSON.parse(sizeStock);
-            } catch (err) {
-                return res.status(400).json({ success: false, message: 'Invalid sizeStock format' });
-            }
-        } else {
-            parsedSizeStock = sizeStock;
-        }
-
+       
         // 제품 생성 (카테고리 단일 필드 사용)
         const product = new Product({
             name,
             category,  // 통합된 카테고리 필드
             price,
             description,
-            sizeStock: parsedSizeStock,
+            brand,
             mainImage: mainImageUrl, 
             additionalImages: uploadedImages, 
         });
@@ -244,7 +234,7 @@ exports.deleteProduct = async (req, res) => {
 // 제품 수정
 exports.updateProduct = async (req, res) => {
     const { id } = req.params;
-    const { name, description, price, category, sizeStock } = req.body;
+    const { name, description, price, category, brand } = req.body;
 
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
@@ -263,14 +253,7 @@ exports.updateProduct = async (req, res) => {
         product.description = description;
         product.price = price;
         product.category = category;  // 단일 필드로 저장
-
-        // if (sizeStock) {
-        //     product.sizeStock.S = sizeStock.S || 0;
-        //     product.sizeStock.M = sizeStock.M || 0;
-        //     product.sizeStock.L = sizeStock.L || 0;
-        //     product.sizeStock.XL = sizeStock.XL || 0;
-        //     product.sizeStock.free = sizeStock.free || 0;
-        // }
+        product.brand = brand;
 
         await product.save();
 
