@@ -71,12 +71,13 @@ exports.createProduct = async (req, res) => {
         }
 
         // 텍스트 데이터 받기
-        const { name, category, price, description } = req.body;
+        const { name, category, price, brand, description } = req.body;
 
        
         // 제품 생성 (카테고리 단일 필드 사용)
         const product = new Product({
             name,
+            brand,
             category,  // 통합된 카테고리 필드
             price,
             description,

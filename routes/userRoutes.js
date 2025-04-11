@@ -11,6 +11,7 @@ const {
     updateIsActive,
     changePassword,
     getInactiveUsersCount,
+    getUserInfoByField,
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -26,6 +27,8 @@ router.post('/loginAdmin', loginAdmin);
 router.post('/signup', signupUser);
 //모든 유저 정보 조회
 router.get('/userinfo', getAllUsersInfo );
+
+router.get('/userCheck', getUserInfoByField );
 //아이디를 통해 유저 조회
 router.get('/userinfoget', getUserInfo );
 //유저 정보 조회
