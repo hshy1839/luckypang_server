@@ -12,6 +12,8 @@ const {
     changePassword,
     getInactiveUsersCount,
     getUserInfoByField,
+    checkDuplicate,
+    checkReferralCode
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -31,6 +33,11 @@ router.get('/userinfo', getAllUsersInfo );
 router.get('/userCheck', getUserInfoByField );
 //아이디를 통해 유저 조회
 router.get('/userinfoget', getUserInfo );
+
+router.post('/check-duplicate', checkDuplicate );
+
+router.post('/check-referral', checkReferralCode );
+
 //유저 정보 조회
 router.get('/userinfo/:id',  getUserInfoByid);
 //유저 수정

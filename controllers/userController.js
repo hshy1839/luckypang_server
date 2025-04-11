@@ -340,3 +340,38 @@ exports.getUserInfoByField = async (req, res) => {
     return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };
+
+exports.checkDuplicate=  async (req, res) => {
+  const { nickname, email } = req.body;
+
+  try {
+    if (nickname) {
+      const exists = await User.findOne({ nickname });
+      return res.json({ exists: !!exists });
+    }
+    if (email) {
+      const exists = await User.findOne({ email });
+      return res.json({ exists: !!exists });
+    }
+
+    return res.status(400).json({ message: 'nickname 또는 email이 필요합니다.' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '서버 오류' });
+  }
+};
+
+exports.checkReferralCode=  async (req, res) => {
+  const { referralCode } = req.body;
+
+  try {
+    if (referralCode) {
+      const exists = await User.findOne({ referralCode });
+      return res.json({ exists: !!exists });
+    }
+    return res.status(400).json({ message: '추천인 코드가 필요합니다' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '서버 오류' });
+  }
+};
