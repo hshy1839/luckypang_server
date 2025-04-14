@@ -29,7 +29,7 @@ const generateUniqueReferralCode = async () => {
 // 회원가입
 exports.signupUser = async (req, res) => {
   try {
-    const { phoneNumber } = req.body;
+    const { phoneNumber, referralCode, nickname } = req.body;
 
     if (phoneNumber && phoneNumber.length > 12) {
       return res.status(400).json({
@@ -38,16 +38,27 @@ exports.signupUser = async (req, res) => {
       });
     }
 
-    // 추천 코드 생성
-    const referralCode = await generateUniqueReferralCode();
+    // 고유 추천 코드 생성
+    const generatedCode = await generateUniqueReferralCode();
 
-    // 유저 객체 생성 시 코드 포함
+    // 새로운 유저 생성
     const user = new User({
       ...req.body,
-      referralCode,
+      referralCode: generatedCode,
     });
 
     const savedUser = await user.save();
+
+    // ✅ 추천인 코드가 유효한 경우 -> 추천한 유저의 referredBy 에 추가
+    if (referralCode) {
+      const referringUser = await User.findOne({ referralCode });
+
+      if (referringUser) {
+        referringUser.referredBy = referringUser.referredBy || [];
+        referringUser.referredBy.push(nickname);
+        await referringUser.save();
+      }
+    }
 
     const token = jwt.sign({ userId: savedUser._id }, JWT_SECRET, { expiresIn: '3h' });
 

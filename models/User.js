@@ -27,7 +27,7 @@ const userSchema = mongoose.Schema({
     maxlength: 18,
   },
   referralCode: { type: String, unique: true }, // 이 유저의 코드
-  referredBy: { type: String },
+  referredBy: [{ type: String }],
   eventAgree: {
     type: Boolean,
     default: false,
