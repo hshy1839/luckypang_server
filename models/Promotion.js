@@ -5,6 +5,7 @@ const promotionSchema = new mongoose.Schema({
   name: { type: String, required: true },         // 상품 이름
   promotionImage: [{type: String, required: true}],      
   createdAt: { type: Date, default: Date.now },   // 상품 생성 날짜
+  link: { type: String, required: true },   
 });
 
 // 상품 모델 생성

@@ -49,7 +49,7 @@ exports.createPromotion = async (req, res) => {
         });
       }
   
-      const { name } = req.body; // 텍스트 데이터 받기
+      const { name, link } = req.body; // 텍스트 데이터 받기
   
       if (!name) {
         return res.status(400).json({ success: false, message: 'Name is required' });
@@ -58,6 +58,7 @@ exports.createPromotion = async (req, res) => {
       // 프로모션 생성
       const promotion = new Promotion({
         name,
+        link,
         promotionImage: promotionImages,
       });
   
