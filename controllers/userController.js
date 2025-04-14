@@ -163,17 +163,40 @@ exports.getAllUsersInfo = async (req, res) => {
 exports.getUserInfo = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!token) {
+      console.log('❌ 토큰 없음');
+      return res.status(401).json({ success: false, message: '토큰이 없습니다.' });
+    }
 
-    const user = await User.findById(decoded.userId).select('-password');
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    console.log('🔐 디코딩된 유저 정보:', decoded);
+    console.log('🔍 조회할 유저 ID:', userId);
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      console.log('❌ 유효하지 않은 ObjectId 형식:', userId);
+      return res.status(400).json({ success: false, message: '유효하지 않은 유저 ID입니다.' });
+    }
+
+    // 여기서 findOne + 명시적 ObjectId 캐스팅
+    const user = await User.findOne({ _id: new mongoose.Types.ObjectId(userId) }).select('-password');
+
     if (!user) {
+      console.log('❌ 유저 없음:', userId);
+
+      const allUsers = await User.find().select('_id nickname email phoneNumber referralCode eventAgree');
+
+      console.log('📋 현재 DB에 있는 유저 목록:', allUsers);
+
       return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
     }
 
-    res.status(200).json({ success: true, user });
+    console.log('✅ 유저 정보 반환 성공:', user.nickname);
+    return res.status(200).json({ success: true, user });
   } catch (err) {
-    console.error('내 정보 조회 실패:', err);
-    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    console.error('❗️내 정보 조회 실패:', err);
+    return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };
 

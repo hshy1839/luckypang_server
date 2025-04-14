@@ -42,65 +42,86 @@ const storage = multer.diskStorage({
 // 상품 생성 (category 통합)
 exports.createProduct = async (req, res) => {
     try {
-        const token = req.headers['authorization']?.split(' ')[1];
-        if (!token) {
-            return res.status(403).json({ success: false, message: 'Token is required' });
-        }
-
-        let decoded;
-        try {
-            decoded = jwt.verify(token, JWT_SECRET);
-        } catch (err) {
-            return res.status(401).json({ success: false, message: 'Invalid or expired token' });
-        }
-
-        if (!decoded || !decoded.userId) {
-            return res.status(401).json({ success: false, message: 'Token does not contain userId' });
-        }
-
-        let mainImageUrl = '';
-        if (req.files && req.files.mainImage) {
-            mainImageUrl = '/uploads/product_main_images/' + req.files.mainImage[0].filename;
-        }
-
-        const uploadedImages = [];
-        if (req.files && req.files.additionalImages) {
-            req.files.additionalImages.forEach(file => {
-                uploadedImages.push('/uploads/product_detail_images/' + file.filename);
-            });
-        }
-
-        // 텍스트 데이터 받기
-        const { name, category, price, brand, description } = req.body;
-
-       
-        // 제품 생성 (카테고리 단일 필드 사용)
-        const product = new Product({
-            name,
-            brand,
-            category,  // 통합된 카테고리 필드
-            price,
-            description,
-            brand,
-            mainImage: mainImageUrl, 
-            additionalImages: uploadedImages, 
+      const token = req.headers['authorization']?.split(' ')[1];
+      if (!token) {
+        return res.status(403).json({ success: false, message: 'Token is required' });
+      }
+  
+      let decoded;
+      try {
+        decoded = jwt.verify(token, JWT_SECRET);
+      } catch (err) {
+        return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+      }
+  
+      if (!decoded || !decoded.userId) {
+        return res.status(401).json({ success: false, message: 'Token does not contain userId' });
+      }
+  
+      let mainImageUrl = '';
+      if (req.files && req.files.mainImage) {
+        mainImageUrl = '/uploads/product_main_images/' + req.files.mainImage[0].filename;
+      }
+  
+      const uploadedImages = [];
+      if (req.files && req.files.additionalImages) {
+        req.files.additionalImages.forEach(file => {
+          uploadedImages.push('/uploads/product_detail_images/' + file.filename);
         });
-
-        const createdProduct = await product.save();
-
-        return res.status(200).json({
-            success: true,
-            product: createdProduct,
-        });
+      }
+  
+      // 텍스트 데이터 받기
+      const {
+        name,
+        brand,
+        category,
+        probabilityCategory,
+        consumerPrice,
+        price,
+        shippingFee,
+        shippingInfo,
+        option,
+        description,
+        sourceLink,
+        isSourceSoldOut
+      } = req.body;
+  
+      // 고유 상품 번호 생성 예시 (P + 타임스탬프)
+      const productNumber = 'P' + Date.now();
+  
+      const product = new Product({
+        productNumber,
+        name,
+        brand,
+        category,
+        probabilityCategory,
+        consumerPrice,
+        price,
+        shippingFee,
+        shippingInfo,
+        option,
+        description,
+        sourceLink,
+        isSourceSoldOut: isSourceSoldOut === 'true',
+        mainImage: mainImageUrl,
+        additionalImages: uploadedImages,
+      });
+  
+      const createdProduct = await product.save();
+  
+      return res.status(200).json({
+        success: true,
+        product: createdProduct,
+      });
     } catch (err) {
-        console.error('상품 등록 실패:', err);
-        return res.status(500).json({
-            success: false,
-            message: '상품 등록 중 오류가 발생했습니다.',
-            error: err.message,
-        });
+      console.error('상품 등록 실패:', err);
+      return res.status(500).json({
+        success: false,
+        message: '상품 등록 중 오류가 발생했습니다.',
+        error: err.message,
+      });
     }
-};
+  };
 
 
 
