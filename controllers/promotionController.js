@@ -166,3 +166,31 @@ exports.deletePromotion = async (req, res) => {
         return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 };
+
+exports.updatePromotion = async (req, res) => {
+    const { id } = req.params;
+    const { name, link } = req.body;
+
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+        return res.status(401).json({ success: false, message: '로그인 정보가 없습니다.' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        const promotion = await Promotion.findById(id);
+        if (!promotion) {
+            return res.status(404).json({ success: false, message: '제품을 찾을 수 없습니다.' });
+        }
+
+        promotion.name = name;
+        promotion.link = link;
+        await promotion.save();
+
+        return res.status(200).json({ success: true, message: '제품이 수정되었습니다.' });
+    } catch (err) {
+        console.error('제품 수정 중 오류 발생:', err);
+        return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+};

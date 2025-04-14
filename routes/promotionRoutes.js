@@ -4,6 +4,7 @@ const {
     getAllPromotions,
     getPromotion,
     deletePromotion,
+    updatePromotion
 
 } = require('../controllers/promotionController');
 
@@ -34,13 +35,10 @@ router.use((req, res, next) => {
     next();
 });
 
-// 공지사항 추가
 router.post('/promotion/create',upload, createPromotion);
-// 공지사항 목록 조회
 router.get('/promotion/read', getAllPromotions);
-// 공지사항 특정 조회
 router.get('/promotion/read/:id', getPromotion);
-// 공지사항 삭제
+router.put('/promotion/:id', updatePromotion);
 router.delete('/promotion/delete/:id', deletePromotion);
 
 module.exports = router;
