@@ -5,7 +5,8 @@ const {
     deleteProduct, 
     getProduct, 
     updateProduct,
-    getProductsByCategory
+    getProductsByCategory,
+    getProductsSearch
 } = require('../controllers/productController');
 
 const router = express.Router();
@@ -48,6 +49,8 @@ router.post('/products/productCreate', upload, createProduct);
 // 상품 목록 조회
 router.get('/products/allProduct', getAllProducts);
 // 상품 특정 조회
+
+router.get('/products/search', getProductsSearch);
 router.get('/products/Product/:id', getProduct);
 //카테고리 별 상품 조회
 router.get('/products/allProduct/category', (req, res, next) => {

@@ -350,4 +350,22 @@ exports.getProductsByCategory = async (req, res) => {
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 };
-
+exports.getProductsSearch = async (req, res) => {
+    const { name } = req.query;
+  
+    try {
+      const token = req.headers.authorization?.split(' ')[1];
+      if (!token) {
+        return res.status(401).json({ success: false, message: '로그인 정보가 없습니다.' });
+      }
+  
+      const products = await Product.find({
+        name: { $regex: name, $options: 'i' },
+      }).select('name _id probability');
+  
+      res.json({ success: true, products });
+    } catch (err) {
+      res.status(500).json({ success: false, message: '검색 실패', error: err });
+    }
+  };
+  
