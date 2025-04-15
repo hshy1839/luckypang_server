@@ -21,12 +21,6 @@ const boxSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-boxSchema.pre('save', function(next) {
-  const totalProb = this.products.reduce((sum, p) => sum + p.probability, 0);
-  if (totalProb > 1) { // 1 === 100%
-    return next(new Error('확률의 총합이 100%를 초과했습니다.'));
-  }
-  next();
-});
+
 
 module.exports = mongoose.model('Box', boxSchema);

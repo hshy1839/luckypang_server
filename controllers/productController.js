@@ -351,7 +351,7 @@ exports.getProductsByCategory = async (req, res) => {
     }
 };
 exports.getProductsSearch = async (req, res) => {
-    const { name } = req.query;
+    const { name, category } = req.query;
   
     try {
       const token = req.headers.authorization?.split(' ')[1];
@@ -359,13 +359,19 @@ exports.getProductsSearch = async (req, res) => {
         return res.status(401).json({ success: false, message: '로그인 정보가 없습니다.' });
       }
   
-      const products = await Product.find({
-        name: { $regex: name, $options: 'i' },
-      }).select('name _id probability');
+      let query = {};
+      if (name) {
+        query.name = { $regex: name, $options: 'i' };
+      } else if (category) {
+        query.category = { $regex: category, $options: 'i' };
+      }
+  
+      const products = await Product.find(query).select('name _id probability category');
   
       res.json({ success: true, products });
     } catch (err) {
       res.status(500).json({ success: false, message: '검색 실패', error: err });
     }
   };
+  
   

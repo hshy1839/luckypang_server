@@ -54,23 +54,21 @@ exports.createBox = async (req, res) => {
         return res.status(401).json({ success: false, message: 'Invalid or expired token' });
       }
   
-      if (!decoded || !decoded.userId) {
+      if (!decoded?.userId) {
         return res.status(401).json({ success: false, message: 'Token does not contain userId' });
       }
   
+      // ✅ 이미지 처리
       let mainImageUrl = '';
-      if (req.files && req.files.mainImage) {
+      if (req.files?.mainImage?.[0]) {
         mainImageUrl = '/uploads/box_main_images/' + req.files.mainImage[0].filename;
       }
   
-      const uploadedImages = [];
-      if (req.files && req.files.additionalImages) {
-        req.files.additionalImages.forEach(file => {
-          uploadedImages.push('/uploads/box_detail_images/' + file.filename);
-        });
-      }
+      const uploadedImages = req.files?.additionalImages?.map(file => (
+        '/uploads/box_detail_images/' + file.filename
+      )) || [];
   
-      // 텍스트 데이터 받기
+      // ✅ 텍스트 데이터
       const {
         name,
         description,
@@ -80,9 +78,33 @@ exports.createBox = async (req, res) => {
         availableFrom,
         availableUntil,
         purchaseLimit,
-        products,
       } = req.body;
   
+      // ✅ products 파싱
+      let parsedProducts = [];
+      const rawProducts = req.body.products;
+  
+      if (Array.isArray(rawProducts)) {
+        parsedProducts = rawProducts
+          .map((p) => {
+            try {
+              return JSON.parse(p);
+            } catch (e) {
+              console.error('Invalid JSON in products[]:', p);
+              return null;
+            }
+          })
+          .filter(Boolean);
+      } else if (typeof rawProducts === 'string') {
+        try {
+          parsedProducts = [JSON.parse(rawProducts)];
+        } catch (e) {
+          console.error('Invalid single product JSON:', rawProducts);
+          return res.status(400).json({ success: false, message: 'Invalid product format' });
+        }
+      }
+  
+      // ✅ Box 생성
       const box = new Box({
         name,
         description,
@@ -91,8 +113,8 @@ exports.createBox = async (req, res) => {
         availableFrom,
         availableUntil,
         purchaseLimit,
-        products,
         isPublic: isPublic === 'true',
+        products: parsedProducts,
         mainImage: mainImageUrl,
         additionalImages: uploadedImages,
       });
@@ -112,8 +134,7 @@ exports.createBox = async (req, res) => {
       });
     }
   };
-
-
+  
 
 
 
@@ -162,7 +183,11 @@ exports.getBox = async (req, res) => {
 
         const decoded = jwt.verify(token, JWT_SECRET);
 
-        const box = await Box.findById(id);
+        const box = await Box.findById(id).populate({
+            path: 'products.product',
+            model: 'Product',
+          });
+          
         if (!box) {
             console.error('제품 없음:', id);
             return res.status(404).json({ success: false, message: '제품을 찾을 수 없습니다.' });
