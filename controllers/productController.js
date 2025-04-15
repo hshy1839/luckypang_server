@@ -75,7 +75,7 @@ exports.createProduct = async (req, res) => {
         name,
         brand,
         category,
-        probabilityCategory,
+        probability,
         consumerPrice,
         price,
         shippingFee,
@@ -94,7 +94,7 @@ exports.createProduct = async (req, res) => {
         name,
         brand,
         category,
-        probabilityCategory,
+        probability,
         consumerPrice,
         price,
         shippingFee,
@@ -256,35 +256,77 @@ exports.deleteProduct = async (req, res) => {
 // 제품 수정
 exports.updateProduct = async (req, res) => {
     const { id } = req.params;
-    const { name, description, price, category, brand } = req.body;
-
     const token = req.headers.authorization?.split(' ')[1];
+    console.log(req.body);
+    console.log(req.file);
     if (!token) {
-        return res.status(401).json({ success: false, message: '로그인 정보가 없습니다.' });
+      return res.status(401).json({ success: false, message: '로그인 정보가 없습니다.' });
     }
-
+  
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-
-        const product = await Product.findById(id);
-        if (!product) {
-            return res.status(404).json({ success: false, message: '제품을 찾을 수 없습니다.' });
-        }
-
-        product.name = name;
-        product.description = description;
-        product.price = price;
-        product.category = category;  // 단일 필드로 저장
-        product.brand = brand;
-
-        await product.save();
-
-        return res.status(200).json({ success: true, message: '제품이 수정되었습니다.' });
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const product = await Product.findById(id);
+  
+      if (!product) {
+        return res.status(404).json({ success: false, message: '제품을 찾을 수 없습니다.' });
+      }
+  
+      // 🔸 대표 이미지 처리
+      if (req.files?.mainImage?.length > 0) {
+        product.mainImage = '/uploads/product_main_images/' + req.files.mainImage[0].filename;
+      } else if (req.body.retainMainImage === 'true') {
+        // 유지
+      } else {
+        product.mainImage = '';
+      }
+  
+      // 🔸 상세 이미지 처리
+      if (req.files?.additionalImages?.length > 0) {
+        const newImages = req.files.additionalImages.map(file =>
+          '/uploads/product_detail_images/' + file.filename
+        );
+      
+        // 기존 이미지 유지 요청이 있는 경우 병합
+        const retained = req.body.initialAdditionalImages;
+        const retainedArray = retained
+          ? Array.isArray(retained) ? retained : [retained]
+          : [];
+      
+        product.additionalImages = [...retainedArray, ...newImages];
+      } else if (req.body.retainAdditionalImages === 'true') {
+        const retained = req.body.initialAdditionalImages;
+        product.additionalImages = Array.isArray(retained) ? retained : [retained];
+      } else {
+        product.additionalImages = [];
+      }
+  
+      // 🔸 일반 텍스트 필드 업데이트
+      const fields = [
+        'name', 'brand', 'category', 'probability',
+        'consumerPrice', 'price', 'shippingFee',
+        'shippingInfo', 'option', 'description', 'sourceLink'
+      ];
+  
+      fields.forEach(field => {
+        if (field in req.body) product[field] = req.body[field];
+      });
+  
+      product.isSourceSoldOut = req.body.isSourceSoldOut === 'true';
+  
+      await product.save();
+  
+      return res.status(200).json({ success: true, product });
+  
     } catch (err) {
-        console.error('제품 수정 중 오류 발생:', err);
-        return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+      console.error('제품 수정 중 오류 발생:', err);
+      return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
-};
+  };
+  
+  
+  
+  
+  
 
 
 // 특정 카테고리의 제품 조회 (단일 category 필드 기준)

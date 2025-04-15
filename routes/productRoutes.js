@@ -71,6 +71,6 @@ router.get('/products/allProduct/category', (req, res, next) => {
 // 상품 삭제
 router.delete('/products/delete/:id', deleteProduct);
 // 상품 수정
-router.put('/products/update/:id', updateProduct);
+router.put('/products/update/:id', upload, updateProduct);
 
 module.exports = router;

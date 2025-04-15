@@ -13,12 +13,11 @@
     isVisible: { type: Boolean, default: true }, // 노출 여부
     statusDetail: { type: String, enum: ['판매중', '테스트', '품절', '비노출'], default: '판매중' },
   
-    // 확률 카테고리 (ex. 5천원 박스 전용)
-    probabilityCategory: { type: String }, // ex. '5000_box', '10000_box'
+    // 확률 (ex. 5천원 박스 전용)
+    probability: { type: String }, // ex. '5000_box', '10000_box'
   
     // 이미지
     mainImage: { type: String }, // 대표 이미지 (단일)
-    mainImageArray: [{ type: String }], // 여러 개 사용 가능
     additionalImages: [{ type: String }], // 상세 이미지
   
     // 가격 관련
@@ -30,8 +29,6 @@
     // 배송 관련
     shippingInfo: { type: String }, // ex. "3만원 이상 무료배송", "제주도 추가 3,000원" 등
   
-    // 옵션
-    option: { type: String }, // ex. 색상:빨강, 사이즈:M
   
     // 설명
     description: { type: String },
