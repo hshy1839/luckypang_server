@@ -7,11 +7,11 @@ const boxSchema = new mongoose.Schema({
   price: { type: Number, required: true },            // 가격 (포인트 or 현금)
   isPublic: { type: Boolean, default: false },        // 공개 여부 (공개 시 유저가 구매 가능)
   type: { type: String, enum: ['event', 'limited', 'normal'], default: 'normal' }, // 박스 유형
-  image: { type: String },                            // 대표 이미지 URL
+  mainImage: { type: String }, // 대표 이미지 (단일)
+  additionalImages: [{ type: String }], // 상세 이미지                           // 대표 이미지 URL
   availableFrom: { type: Date },                      // 판매 시작일
   availableUntil: { type: Date },                     // 판매 종료일
   purchaseLimit: { type: Number },  
-  actionCode: { type: String, unique: true },                  // 구매 제한 수량 (예: 1일 1회 등)
   
   // 등장 상품 설정 (상품 ID와 확률 포함)
   products: [{

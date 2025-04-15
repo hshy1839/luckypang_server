@@ -20,6 +20,7 @@ const qnaRoutes = require('./routes/qnaRoutes');
 const totalRoutes = require('./routes/totalRoutes');
 const couponRoutes = require('./routes/couponRoutes');
 const promotionRoutes = require('./routes/promotionRoutes');
+const boxRoutes = require('./routes/boxRoutes');
 
 
 // CORS 설정 (여러 도메인 허용)
@@ -69,6 +70,8 @@ app.use((req, res, next) => {
 app.use('/api/users', userRoutes);
 app.use('/api/users', noticeRoutes);
 app.use('/api', productRoutes);
+
+app.use('/api', boxRoutes);
 // app.use('/api', cartRoutes);
 // app.use('/api', orderRoutes);
 app.use('/api', shippingRoutes);
