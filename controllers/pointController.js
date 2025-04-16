@@ -96,6 +96,35 @@ exports.getPointsByUserId = async (req, res) => {
     }
 };
 
+
+exports.getAllPoints = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1]; // Bearer 토큰에서 추출
+        if (!token) {
+            return res.status(401).json({ success: false, message: '토큰이 없습니다.' });
+        }
+
+        // 토큰 검증
+        const decoded = jwt.verify(token, JWT_SECRET); // 토큰만 검증, 특정 유저 정보는 확인하지 않음
+      
+
+        // 공지사항 조회
+        const points = await Point.find().populate('user', 'nickname');
+        if (!points || points.length === 0) {
+            return res.status(404).json({ success: false, message: '포인트 내역을 찾을 수 없습니다.' });
+        }
+
+        res.status(200).json({
+            success: true,
+            totalPoints: points.length,
+            points: points,
+        });
+    } catch (err) {
+        console.error('모든 포인트내역 조회 실패:', err);
+        res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+};
+
 // 포인트 내역 수정
 exports.updatePoint = async (req, res) => {
     try {

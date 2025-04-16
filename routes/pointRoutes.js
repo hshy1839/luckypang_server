@@ -4,6 +4,7 @@ const {
     getPointsByUserId,
     updatePoint,
     deletePoint,
+    getAllPoints
 } = require('../controllers/pointController');
 
 const router = express.Router();
@@ -17,6 +18,7 @@ router.use((req, res, next) => {
 router.post('/points/:id', createPoint);
 // 공지사항 목록 조회
 router.get('/points/:id', getPointsByUserId);
+router.get('/points', getAllPoints);
 // 공지사항 삭제
 router.delete('/points/:id', updatePoint);
 // 공지사항 수정
