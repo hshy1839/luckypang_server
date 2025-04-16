@@ -5,6 +5,7 @@ const path = require('path');
 const JWT_SECRET = 'jm_shoppingmall';
 const fs = require('fs');
 const mongoose = require("mongoose");
+const { Product } = require('../models/Product'); 
 
 
 const { v4: uuidv4 } = require('uuid');
@@ -121,10 +122,22 @@ exports.createBox = async (req, res) => {
   
       const createdBox = await box.save();
   
+      // ✅ 포함된 상품들의 category를 박스 이름으로 설정
+      if (parsedProducts.length > 0) {
+        await Promise.all(
+          parsedProducts.map(async (item) => {
+            await Product.findByIdAndUpdate(item.product, {
+              category: createdBox.name,
+            });
+          })
+        );
+      }
+  
       return res.status(200).json({
         success: true,
         box: createdBox,
       });
+  
     } catch (err) {
       console.error('상품 등록 실패:', err);
       return res.status(500).json({
@@ -321,9 +334,16 @@ exports.updateBox = async (req, res) => {
         'type', 'availableFrom', 'availableUntil',
         'purchaseLimit', 'products'
       ];
-  
       fields.forEach(field => {
-        if (field in req.body) box[field] = req.body[field];
+        if (field in req.body && req.body[field]) {
+          if (field === 'availableFrom' || field === 'availableUntil') {
+            box[field] = new Date(req.body[field]);  // 🔸 명시적 형변환
+          } else if (field === 'isPublic') {
+            box[field] = req.body[field] === 'true';
+          } else {
+            box[field] = req.body[field];
+          }
+        }
       });
   
       box.isPublic = req.body.isPublic === 'true';

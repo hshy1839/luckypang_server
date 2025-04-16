@@ -5,6 +5,8 @@ const path = require('path');
 const JWT_SECRET = 'jm_shoppingmall';
 const fs = require('fs');
 const mongoose = require("mongoose");
+const Box = require('../models/Box/Box.js');
+
 
 
 const { v4: uuidv4 } = require('uuid');
@@ -70,11 +72,10 @@ exports.createProduct = async (req, res) => {
         });
       }
   
-      // 텍스트 데이터 받기
       const {
         name,
         brand,
-        category,
+        category, // ✅ 박스 이름으로 전달됨
         probability,
         consumerPrice,
         price,
@@ -86,7 +87,6 @@ exports.createProduct = async (req, res) => {
         isSourceSoldOut
       } = req.body;
   
-      // 고유 상품 번호 생성 예시 (P + 타임스탬프)
       const productNumber = 'P' + Date.now();
   
       const product = new Product({
@@ -109,10 +109,26 @@ exports.createProduct = async (req, res) => {
   
       const createdProduct = await product.save();
   
+      // ✅ Box 모델에 해당 상품 추가
+      if (category) {
+        const box = await Box.findOne({ name: category });
+        if (box) {
+          const alreadyExists = box.products.some(p => p.product.toString() === createdProduct._id.toString());
+          if (!alreadyExists) {
+            box.products.push({
+              product: createdProduct._id,
+              probability: parseFloat(probability) || 0,
+            });
+            await box.save();
+          }
+        }
+      }
+  
       return res.status(200).json({
         success: true,
         product: createdProduct,
       });
+  
     } catch (err) {
       console.error('상품 등록 실패:', err);
       return res.status(500).json({
