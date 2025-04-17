@@ -2,6 +2,8 @@ const express = require('express');
 const { 
     addToOrder, 
     getOrdersByUserId,
+    getAllOrders,
+    getOrderById,
 } = require('../controllers/orderController');
 
 const router = express.Router();
@@ -14,6 +16,9 @@ router.use((req, res, next) => {
 // 공지사항 추가
 router.post('/order', addToOrder);
 router.get('/order', getOrdersByUserId);
+
+router.get('/orders', getAllOrders);
+router.get('/orders/:id', getOrderById);
 
 module.exports = router;
 

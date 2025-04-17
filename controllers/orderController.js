@@ -129,3 +129,52 @@ exports.getOrdersByUserId = async (req, res) => {
     });
   }
 };
+
+exports.getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate('user')
+      .populate('box')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    console.error('💥 전체 주문 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '서버 오류로 인해 주문을 조회할 수 없습니다.',
+    });
+  }
+};
+
+exports.getOrderById = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: '주문 ID가 필요합니다.' });
+    }
+
+    const order = await Order.findById(orderId)
+      .populate('box')
+      .populate('user');
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: '해당 주문을 찾을 수 없습니다.' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      order,
+    });
+  } catch (error) {
+    console.error('💥 주문 단건 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '서버 오류로 인해 주문을 조회할 수 없습니다.',
+    });
+  }
+};
