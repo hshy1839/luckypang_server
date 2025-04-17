@@ -72,6 +72,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/users', noticeRoutes);
 app.use('/api', productRoutes);
 
+app.use('/api', orderRoutes);
 app.use('/api', boxRoutes);
 // app.use('/api', cartRoutes);
 // app.use('/api', orderRoutes);

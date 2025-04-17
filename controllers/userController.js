@@ -100,12 +100,18 @@ exports.loginUser = async (req, res) => {
       JWT_SECRET
     );
 
-    res.status(200).json({ loginSuccess: true, token });
+    // ✅ userId 포함해서 응답
+    res.status(200).json({
+      loginSuccess: true,
+      token,
+      userId: user._id
+    });
   } catch (err) {
     console.error('로그인 실패:', err);
     res.status(400).send(err);
   }
 };
+
 
 // 관리자 로그인
 exports.loginAdmin = async (req, res) => {
@@ -164,41 +170,33 @@ exports.getUserInfo = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-      console.log('❌ 토큰 없음');
       return res.status(401).json({ success: false, message: '토큰이 없습니다.' });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ success: false, message: '유효하지 않은 토큰입니다.' });
+    }
+
     const userId = decoded.userId;
-
-    console.log('🔐 디코딩된 유저 정보:', decoded);
-    console.log('🔍 조회할 유저 ID:', userId);
-
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      console.log('❌ 유효하지 않은 ObjectId 형식:', userId);
       return res.status(400).json({ success: false, message: '유효하지 않은 유저 ID입니다.' });
     }
 
-    // 여기서 findOne + 명시적 ObjectId 캐스팅
-    const user = await User.findOne({ _id: new mongoose.Types.ObjectId(userId) }).select('-password');
-
+    const user = await User.findById(userId).select('-password');
     if (!user) {
-      console.log('❌ 유저 없음:', userId);
-
-      const allUsers = await User.find().select('_id nickname email phoneNumber referralCode eventAgree');
-
-      console.log('📋 현재 DB에 있는 유저 목록:', allUsers);
-
       return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
     }
 
-    console.log('✅ 유저 정보 반환 성공:', user.nickname);
     return res.status(200).json({ success: true, user });
   } catch (err) {
-    console.error('❗️내 정보 조회 실패:', err);
+    console.error('유저 정보 조회 실패:', err);
     return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };
+
 
 // 특정 유저 조회 by ID
 exports.getUserInfoByid = async (req, res) => {
