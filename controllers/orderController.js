@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Point = require('../models/Point');
-const Box  = require('../models/Box/Box');
+const Box = require('../models/Box/Box');
 
 const JWT_SECRET = 'jm_shoppingmall';
 
@@ -75,7 +75,7 @@ exports.addToOrder = async (req, res) => {
 
       const updatedTotal = currentTotal - pointUsed;
 
-      
+
       const pointLog = new Point({
         user: userId,
         type: '감소',
@@ -178,3 +178,66 @@ exports.getOrderById = async (req, res) => {
     });
   }
 };
+
+// POST /api/orders/:id/unbox
+exports.unboxOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+
+    const order = await Order.findById(orderId).populate('box');
+
+    if (!order || order.unboxedProduct?.product) {
+      return res.status(400).json({ success: false, message: '이미 박스가 열렸거나 주문이 없습니다.' });
+    }
+
+    const box = await Box.findById(order.box._id).populate('products.product');
+
+    if (!box || !Array.isArray(box.products) || box.products.length === 0) {
+      return res.status(500).json({ success: false, message: '박스에 상품이 없습니다.' });
+    }
+
+    const items = box.products;
+
+    // 전체 확률 합산
+    const totalProb = items.reduce((acc, item) => acc + Number(item.probability || 0), 0);
+    const rand = Math.random() * totalProb;
+
+    let sum = 0;
+    let selected = null;
+
+    for (let i = 0; i < items.length; i++) {
+      const prob = Number(items[i].probability);
+      if (isNaN(prob)) continue;
+      sum += prob;
+      if (rand <= sum) {
+        selected = items[i].product;
+        break;
+      }
+    }
+
+    if (!selected || !selected._id) {
+      console.error('❌ 선택된 상품이 없음');
+      return res.status(500).json({ success: false, message: '상품 선택 실패' });
+    }
+
+    order.unboxedProduct = {
+      product: selected._id,
+      decidedAt: new Date(),
+    };
+
+    await order.save();
+    console.log('✅ 박스 열기 완료, 저장됨');
+
+    const updatedOrder = await Order.findById(orderId)
+      .populate('box')
+      .populate('user')
+      .populate('unboxedProduct.product');
+
+    return res.status(200).json({ success: true, order: updatedOrder });
+  } catch (err) {
+    console.error('💥 박스 열기 오류:', err.message);
+    console.error(err.stack);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
