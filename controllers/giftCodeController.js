@@ -45,7 +45,7 @@ exports.createGiftCode = async (req, res) => {
         success: true,
         code: existingGift.code,
         giftId: existingGift._id,
-        message: '이미 생성된 선물 코드입니다.',
+        message: `이미 생성된 선물 코드입니다. ${existingGift.code}`,
       });
     }
 
