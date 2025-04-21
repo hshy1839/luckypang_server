@@ -255,6 +255,7 @@ exports.getUnboxedOrdersByUserId = async (req, res) => {
     const orders = await Order.find({
       user: userId,
       'unboxedProduct.product': { $exists: true, $ne: null },
+      status: 'paid',
     })
       .populate('box')
       .populate('user')
@@ -274,5 +275,60 @@ exports.getUnboxedOrdersByUserId = async (req, res) => {
       success: false,
       message: '서버 오류로 인해 언박싱 내역을 조회할 수 없습니다.',
     });
+  }
+};
+
+exports.refundOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { refundRate } = req.body;
+
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: '토큰이 없습니다.' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    const order = await Order.findById(orderId);
+    if (!order || order.status !== 'paid') {
+      return res.status(400).json({ message: '환급할 수 없는 주문입니다.' });
+    }
+
+    const refundAmount = Math.floor((order.paymentAmount + order.pointUsed) * refundRate / 100);
+
+    // 주문 상태 변경
+    order.status = 'refunded';
+    order.refunded.point = refundAmount;
+    await order.save();
+
+    // 포인트 총액 계산
+    const userPoints = await Point.find({ user: userId });
+    const currentTotal = userPoints.reduce((acc, p) => {
+      if (['추가', '환불'].includes(p.type)) return acc + p.amount;
+      if (p.type === '감소') return acc - p.amount;
+      return acc;
+    }, 0);
+
+    const updatedTotal = currentTotal + refundAmount;
+
+    // 포인트 환불 내역 추가
+    const refundLog = new Point({
+      user: userId,
+      type: '환불',
+      amount: refundAmount,
+      description: '포인트 환급',
+      relatedOrder: order._id,
+      totalAmount: updatedTotal
+    });
+    await refundLog.save();
+
+    return res.status(200).json({
+      success: true,
+      refundedAmount: refundAmount
+    });
+
+  } catch (err) {
+    console.error('❌ 환불 처리 오류:', err);
+    return res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
