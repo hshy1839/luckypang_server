@@ -34,7 +34,6 @@ exports.addToOrder = async (req, res) => {
       return res.status(400).json({ message: '결제 수단이 유효하지 않습니다.' });
     }
 
-    // 📦 박스 존재 및 재고 확인
     const selectedBox = await Box.findById(box);
     if (!selectedBox) return res.status(404).json({ message: '해당 박스를 찾을 수 없습니다.' });
 
@@ -46,24 +45,28 @@ exports.addToOrder = async (req, res) => {
       await selectedBox.save();
     }
 
-    // 🧾 주문 생성
-    const newOrder = new Order({
-      user: userId,
-      box,
-      boxCount,
-      paymentType,
-      paymentAmount,
-      pointUsed,
-      deliveryFee: {
-        point: deliveryFee.point || 0,
-        cash: deliveryFee.cash || 0
-      },
-      status: 'paid'
-    });
+    // ✅ 주문 여러 개 생성
+    const createdOrders = [];
+    for (let i = 0; i < boxCount; i++) {
+      const newOrder = new Order({
+        user: userId,
+        box,
+        boxCount: 1, // 단건 처리
+        paymentType,
+        paymentAmount: Math.floor(paymentAmount / boxCount),
+        pointUsed: Math.floor(pointUsed / boxCount),
+        deliveryFee: {
+          point: deliveryFee.point || 0,
+          cash: deliveryFee.cash || 0,
+        },
+        status: 'paid',
+      });
 
-    await newOrder.save();
+      await newOrder.save();
+      createdOrders.push(newOrder);
+    }
 
-    // 🪙 포인트 차감 내역 기록
+    // ✅ 포인트 차감 한 번만 처리
     if (pointUsed > 0) {
       const userPoints = await Point.find({ user: userId });
 
@@ -75,24 +78,23 @@ exports.addToOrder = async (req, res) => {
 
       const updatedTotal = currentTotal - pointUsed;
 
-
       const pointLog = new Point({
         user: userId,
         type: '감소',
         amount: pointUsed,
         description: '럭키박스 구매 사용',
-        relatedOrder: newOrder._id,
-        totalAmount: updatedTotal
+        relatedOrder: createdOrders[0]._id, // 대표 하나만 연결
+        totalAmount: updatedTotal,
       });
 
       await pointLog.save();
     }
 
-    // ✅ 응답 반환
+    // ✅ 응답
     return res.status(201).json({
       success: true,
-      message: '주문이 성공적으로 완료되었습니다.',
-      order: newOrder
+      message: `${createdOrders.length}개의 주문이 성공적으로 완료되었습니다.`,
+      orders: createdOrders,
     });
 
   } catch (error) {
@@ -103,6 +105,7 @@ exports.addToOrder = async (req, res) => {
     });
   }
 };
+
 
 exports.getOrdersByUserId = async (req, res) => {
   try {
@@ -241,3 +244,35 @@ exports.unboxOrder = async (req, res) => {
   }
 };
 
+exports.getUnboxedOrdersByUserId = async (req, res) => {
+  try {
+    const userId = req.query.userId;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'userId가 필요합니다.' });
+    }
+
+    const orders = await Order.find({
+      user: userId,
+      'unboxedProduct.product': { $exists: true, $ne: null },
+    })
+      .populate('box')
+      .populate('user')
+      .populate({
+        path: 'unboxedProduct.product',
+        model: 'Product', // 명시적으로 Product 모델에서 조회
+      })
+      .sort({ 'unboxedProduct.decidedAt': -1 });
+
+    return res.status(200).json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    console.error('💥 언박싱된 주문 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '서버 오류로 인해 언박싱 내역을 조회할 수 없습니다.',
+    });
+  }
+};

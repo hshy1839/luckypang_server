@@ -29,6 +29,7 @@
     // 배송 관련
     shippingInfo: { type: String }, // ex. "3만원 이상 무료배송", "제주도 추가 3,000원" 등
   
+    refundProbability: { type: String },
   
     // 설명
     description: { type: String },

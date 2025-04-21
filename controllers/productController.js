@@ -84,7 +84,8 @@ exports.createProduct = async (req, res) => {
         option,
         description,
         sourceLink,
-        isSourceSoldOut
+        isSourceSoldOut,
+        refundProbability
       } = req.body;
   
       const productNumber = 'P' + Date.now();
@@ -105,6 +106,7 @@ exports.createProduct = async (req, res) => {
         isSourceSoldOut: isSourceSoldOut === 'true',
         mainImage: mainImageUrl,
         additionalImages: uploadedImages,
+        refundProbability
       });
   
       const createdProduct = await product.save();
@@ -320,7 +322,7 @@ exports.updateProduct = async (req, res) => {
       const fields = [
         'name', 'brand', 'category', 'probability',
         'consumerPrice', 'price', 'shippingFee',
-        'shippingInfo', 'option', 'description', 'sourceLink'
+        'shippingInfo', 'option', 'description', 'sourceLink','refundProbability'
       ];
   
       fields.forEach(field => {

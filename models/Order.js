@@ -12,12 +12,6 @@ const orderSchema = new mongoose.Schema({
   },
   paymentAmount: { type: Number, required: true },
   pointUsed: { type: Number, default: 0 },
-
-  deliveryFee: {
-    point: { type: Number, default: 0 },
-    cash: { type: Number, default: 0 }
-  },
-
   status: {
     type: String,
     enum: ['pending', 'paid', 'cancelled', 'shipped', 'refunded'],

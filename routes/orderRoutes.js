@@ -5,6 +5,7 @@ const {
     getAllOrders,
     getOrderById,
     unboxOrder,
+    getUnboxedOrdersByUserId,
 } = require('../controllers/orderController');
 
 const router = express.Router();
@@ -19,6 +20,8 @@ router.post('/order', addToOrder);
 router.get('/order', getOrdersByUserId);
 
 router.get('/orders', getAllOrders);
+router.get('/orders/unboxed', getUnboxedOrdersByUserId);
+
 router.get('/orders/:id', getOrderById);
 router.post('/orders/:id/unbox', unboxOrder);
 module.exports = router;
