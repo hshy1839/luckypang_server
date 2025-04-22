@@ -1,6 +1,7 @@
 const express = require('express');
 const { 
     createGiftCode, 
+    checkGiftCodeExists,
 } = require('../controllers/giftCodeController');
 
 const router = express.Router();
@@ -12,6 +13,7 @@ router.use((req, res, next) => {
 
 
 router.post('/giftCode', createGiftCode);
+router.get('/giftCode', checkGiftCodeExists);
 
 
 module.exports = router;

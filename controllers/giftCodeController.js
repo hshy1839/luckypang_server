@@ -85,3 +85,26 @@ exports.createGiftCode = async (req, res) => {
     return res.status(500).json({ success: false, message: '서버 오류로 생성 실패' });
   }
 };
+
+exports.checkGiftCodeExists = async (req, res) => {
+  try {
+    const { type, boxId, orderId } = req.query;
+
+    if (!['box', 'product'].includes(type)) {
+      return res.status(400).json({ success: false, message: '잘못된 타입입니다.' });
+    }
+
+    const query = { type };
+
+    if (boxId) query.box = new mongoose.Types.ObjectId(boxId);
+    if (orderId) query.order = new mongoose.Types.ObjectId(orderId);
+
+    const existing = await GiftCode.exists(query);
+
+    return res.status(200).json({ success: true, exists: !!existing });
+  } catch (err) {
+    console.error('🎁 선물 코드 존재 확인 오류:', err);
+    return res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};
+
