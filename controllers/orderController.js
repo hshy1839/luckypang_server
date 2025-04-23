@@ -281,7 +281,7 @@ exports.getUnboxedOrdersByUserId = async (req, res) => {
 exports.refundOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
-    const { refundRate } = req.body;
+    const { refundRate, description } = req.body; // ✅ description 추가
 
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({ message: '토큰이 없습니다.' });
@@ -316,7 +316,7 @@ exports.refundOrder = async (req, res) => {
       user: userId,
       type: '환불',
       amount: refundAmount,
-      description: '포인트 환급',
+      description: description || '포인트 환급', // ✅ description 반영
       relatedOrder: order._id,
       totalAmount: updatedTotal
     });

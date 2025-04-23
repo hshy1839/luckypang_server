@@ -70,7 +70,7 @@ app.use((req, res, next) => {
 
 
 app.use('/api/users', userRoutes);
-app.use('/api/users', noticeRoutes);
+app.use('/api', noticeRoutes);
 app.use('/api', productRoutes);
 
 app.use('/api', orderRoutes);

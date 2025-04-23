@@ -1,11 +1,6 @@
 const mongoose = require("mongoose");
 
 const noticeSchema = mongoose.Schema({
-    authorId:
-    {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true
-    },
     title:
     {
         type: String,
@@ -15,10 +10,7 @@ const noticeSchema = mongoose.Schema({
     {
         type: String,
     },
-    authorName:
-    {
-        type: String,
-    },
+    noticeImage: [{type: String, required: true}],
     created_at: {
         type: Date,
         default: Date.now, // 기본값으로 생성된 날짜를 사용
