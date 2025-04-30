@@ -23,6 +23,7 @@ const promotionRoutes = require('./routes/promotionRoutes');
 const boxRoutes = require('./routes/boxRoutes');
 const pointRoutes = require('./routes/pointRoutes');
 const giftCodeRoutes = require('./routes/giftCodeRoutes');
+const eventRoutes = require('./routes/eventRoutes');
 
 
 // CORS 설정 (여러 도메인 허용)
@@ -84,3 +85,4 @@ app.use('/api', totalRoutes);
 app.use('/api', promotionRoutes);
 app.use('/api', pointRoutes);
 app.use('/api', giftCodeRoutes);
+app.use('/api', eventRoutes);
