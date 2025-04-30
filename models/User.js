@@ -36,6 +36,7 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  profileImage: { type: String },
   user_type: {
     type: String,
     default: "3",

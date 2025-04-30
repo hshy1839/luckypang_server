@@ -1,7 +1,26 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models/User');
 const JWT_SECRET = 'jm_shoppingmall';
+const path = require('path');
+const fs = require('fs');
 const mongoose = require("mongoose");
+const multer = require('multer');
+
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (file.fieldname === 'profileImage') {
+      cb(null, 'uploads/profile_images/'); // promotionImage는 promotion_images 폴더에 저장
+    } else {
+      cb(new Error('Invalid field name'), null); // 유효하지 않은 필드명이면 에러
+    }
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // 파일명에 타임스탬프 추가
+  },
+});
+
+const upload = multer({ storage: storage });
 
 // 랜덤 코드 생성
 const generateRandomCode = () => {
@@ -407,3 +426,45 @@ exports.checkReferralCode=  async (req, res) => {
     return res.status(500).json({ message: '서버 오류' });
   }
 };
+
+exports.uploadProfileImage = [
+  upload.single('profileImage'),
+  async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: '로그인 정보가 없습니다.' });
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const user = await User.findById(decoded.userId);
+
+      if (!user) {
+        return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: '이미지 파일이 없습니다.' });
+      }
+
+      // 기존 이미지 삭제 (선택 사항)
+      if (user.profileImage && fs.existsSync(user.profileImage)) {
+        fs.unlinkSync(user.profileImage);
+      }
+
+      // 저장 경로 업데이트
+      const imagePath = req.file.path.replace(/\\/g, '/'); // 윈도우 호환
+      user.profileImage = imagePath;
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message: '프로필 이미지가 업로드되었습니다.',
+        imagePath,
+      });
+    } catch (err) {
+      console.error('프로필 이미지 업로드 오류:', err);
+      return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+  }
+];
