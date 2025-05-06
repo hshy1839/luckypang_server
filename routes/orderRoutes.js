@@ -7,6 +7,7 @@ const {
     unboxOrder,
     getUnboxedOrdersByUserId,
     refundOrder,
+    getAllUnboxedOrders,
 } = require('../controllers/orderController');
 
 const router = express.Router();
@@ -22,6 +23,7 @@ router.get('/order', getOrdersByUserId);
 
 router.get('/orders', getAllOrders);
 router.get('/orders/unboxed', getUnboxedOrdersByUserId);
+router.get('/orders/unboxed/all', getAllUnboxedOrders);
 
 router.post('/orders/:id/refund', refundOrder);
 router.get('/orders/:id', getOrderById);

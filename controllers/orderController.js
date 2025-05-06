@@ -278,6 +278,36 @@ exports.getUnboxedOrdersByUserId = async (req, res) => {
   }
 };
 
+exports.getAllUnboxedOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({
+      'unboxedProduct.product': { $exists: true, $ne: null },
+      status: 'paid',
+    })
+      .populate('box')
+      .populate('user', 'username email nickname') // 필요한 필드만 가져와도 되고
+      .populate({
+        path: 'unboxedProduct.product',
+        model: 'Product',
+      })
+      .sort({ 'unboxedProduct.decidedAt': -1 });
+
+    return res.status(200).json({
+      success: true,
+      total: orders.length,
+      orders,
+    });
+  } catch (error) {
+    console.error('💥 전체 언박싱 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '서버 오류로 인해 언박싱 내역을 조회할 수 없습니다.',
+    });
+  }
+};
+
+
+
 exports.refundOrder = async (req, res) => {
   try {
     const orderId = req.params.id;

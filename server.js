@@ -85,4 +85,4 @@ app.use('/api', totalRoutes);
 app.use('/api', promotionRoutes);
 app.use('/api', pointRoutes);
 app.use('/api', giftCodeRoutes);
-app.use('/api', eventRoutes);``
+app.use('/api', eventRoutes);
