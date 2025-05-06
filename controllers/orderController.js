@@ -285,7 +285,7 @@ exports.getAllUnboxedOrders = async (req, res) => {
       status: 'paid',
     })
       .populate('box')
-      .populate('user', 'username email nickname') // 필요한 필드만 가져와도 되고
+      .populate('user', 'username email nickname profileImage') // 필요한 필드만 가져와도 되고
       .populate({
         path: 'unboxedProduct.product',
         model: 'Product',
