@@ -24,6 +24,7 @@ const boxRoutes = require('./routes/boxRoutes');
 const pointRoutes = require('./routes/pointRoutes');
 const giftCodeRoutes = require('./routes/giftCodeRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const payletterRoutes = require('./routes/payletterRoutes');
 
 
 // CORS 설정 (여러 도메인 허용)
@@ -32,12 +33,6 @@ app.use(cors({
     const allowedOrigins = [
       /^http:\/\/localhost(:\d+)?$/,
       /^http:\/\/127\.0\.0\.1(:\d+)?$/,
-      /^http:\/\/3\.39\.192\.73(:\d+)?$/,
-      /^http:\/\/15\.165\.107\.67(:\d+)?$/,
-      /^http:\/\/3\.35\.233\.121(:\d+)?$/,
-      /^http:\/\/13\.125\.251\.222(:\d+)?$/,
-      /^http:\/\/15\.164\.155\.205(:\d+)?$/,
-      /^http:\/\/54\.180\.221\.135(:\d+)?$/,
     ];
     if (!origin || allowedOrigins.some(regex => regex.test(origin))) {
       callback(null, true);
@@ -86,3 +81,4 @@ app.use('/api', promotionRoutes);
 app.use('/api', pointRoutes);
 app.use('/api', giftCodeRoutes);
 app.use('/api', eventRoutes);
+app.use('/api/payletter', payletterRoutes);
