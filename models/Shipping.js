@@ -8,6 +8,7 @@ const shippingSchema = new mongoose.Schema({
         required: true,
     },
     shippingAddress: {
+        postcode: { type: String, required: true },
         address: { type: String, required: true }, // 배송지 주소
         address2: { type: String, required: true }, // 배송지 주소
     },
