@@ -131,7 +131,39 @@ exports.loginUser = async (req, res) => {
   }
 };
 
+exports.kakaoLogin = async (req, res) => {
+  try {
+    const { kakaoId, nickname } = req.body;
 
+    const user = await User.findOne({ kakaoId });
+
+    if (!user) {
+      // 회원 없음 → 회원가입 필요
+      return res.json({ exists: false });
+    }
+
+    if (!user.is_active) {
+      return res.json({ loginSuccess: false, message: '승인 대기 중입니다.' });
+    }
+
+    // JWT 토큰 생성 (기존 로그인 함수와 동일한 필드)
+    const token = jwt.sign(
+      { userId: user._id, nickname: user.nickname, phoneNumber: user.phoneNumber },
+      JWT_SECRET
+    );
+
+  
+
+    return res.status(200).json({
+      loginSuccess: true,
+      token,
+      userId: user._id
+    });
+  } catch (err) {
+    console.error('❌ kakaoLogin error:', err);
+    return res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};
 
 
 // 관리자 로그인

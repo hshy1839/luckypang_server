@@ -3,6 +3,10 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
 const userSchema = mongoose.Schema({
+  kakaoId: {
+    type: String,
+    unique: true, // 중복 방지
+  },
   nickname: {
     type: String,
     required: true,

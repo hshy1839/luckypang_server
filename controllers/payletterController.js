@@ -1,6 +1,7 @@
   const jwt = require('jsonwebtoken');
   const mongoose = require('mongoose');
   const axios = require('axios');
+  const { User } = require('../models/User');
 
   const JWT_SECRET = 'jm_shoppingmall';
 
@@ -19,6 +20,11 @@ exports.requestPayletterPayment = async function (req, res) {
   
       const decoded = jwt.verify(token, JWT_SECRET);
       const userId = decoded.userId;
+
+      const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ code: 404, message: '유저를 찾을 수 없습니다.' });
+    }
   
       const { amount, productName = '럭키박스', boxId } = req.body;
   
@@ -32,7 +38,7 @@ exports.requestPayletterPayment = async function (req, res) {
         pgcode: 'creditcard',
         client_id: PAYLETTER_CLIENT_ID,
         user_id: userId,
-        user_name: 'testuser',  // ✅ 반드시 문자열로 포함
+        user_name: user.nickname,  // ✅ 반드시 문자열로 포함
         order_no: orderNo,
         amount: amount,
         product_name: productName,
@@ -54,7 +60,6 @@ exports.requestPayletterPayment = async function (req, res) {
         data: JSON.stringify(payload)  // ✅ 반드시 stringify
       });
   
-      console.log('✅ 페이레터 응답 데이터:', result.data);
   
       res.status(200).json({
         code: 200,

@@ -2,6 +2,7 @@ const express = require('express');
 const { 
     loginUser, 
     signupUser, 
+    kakaoLogin,
     getAllUsersInfo , 
     updateUserInfo,
     deleteUser,
@@ -48,6 +49,8 @@ router.use((req, res, next) => {
 // 로그인
 router.post('/login', loginUser);
 router.post('/loginAdmin', loginAdmin);
+
+router.post('/kakao-login', kakaoLogin);
 // 회원가입
 router.post('/signup', signupUser);
 //모든 유저 정보 조회
