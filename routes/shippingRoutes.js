@@ -1,6 +1,7 @@
 const express = require('express');
 const { 
     addToShipping, 
+    getUserShippings,
 } = require('../controllers/shippingController');
 
 const router = express.Router();
@@ -12,6 +13,10 @@ router.use((req, res, next) => {
 
 // 배송지 추가
 router.post('/shipping', addToShipping);
+router.get('/shipping', getUserShippings);
+
+
+
 module.exports = router;
 
 
