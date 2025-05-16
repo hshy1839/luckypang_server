@@ -3,56 +3,41 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
 const userSchema = mongoose.Schema({
-  kakaoId: {
-    type: String,
-    unique: true, // 중복 방지
-  },
-  nickname: {
-    type: String,
+  provider: {
+    type: String, // 'google', 'kakao', 'apple', 'local' 등
     required: true,
-    minlength: 1,
-    maxlength: 8,
-    unique: true,
+    default: 'local',
   },
+  providerId: {
+    type: String, // ex) Google UID, Kakao ID, Apple sub
+    required: function () {
+      return this.provider !== 'local';
+    },
+  },
+
   email: {
     type: String,
-    required: true,
+    required: function () {
+      return this.provider === 'local';
+    },
     unique: true,
+    sparse: true, // 중복 방지 + null 허용
   },
+
   password: {
     type: String,
-    required: true,
-    minlength: 5,
+    required: function () {
+      return this.provider === 'local';
+    },
   },
-  phoneNumber: {
-    type: String,
-    required: true,
-    unique: true,
-    maxlength: 18,
-  },
-  referralCode: { type: String, unique: true }, // 이 유저의 코드
-  referredBy: [{ type: String }],
-  eventAgree: {
-    type: Boolean,
-    default: false,
-  },
-  is_active: {
-    type: Boolean,
-    default: true,
-  },
+
+  nickname: { type: String, required: true },
   profileImage: { type: String },
-  user_type: {
-    type: String,
-    default: "3",
-  },
-  created_at: {
-    type: Date,
-    default: Date.now,
-  },
-  memo: {
-    type: String,
-  },
+
+  is_active: { type: Boolean, default: true },
+  created_at: { type: Date, default: Date.now },
 });
+
 
 // 비밀번호 암호화
 userSchema.pre("save", function (next) {

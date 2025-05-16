@@ -25,143 +25,85 @@ const upload = multer({ storage: storage });
 // 랜덤 코드 생성
 const generateRandomCode = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 };
 
 // 중복 없는 코드 생성
 const generateUniqueReferralCode = async () => {
   let code;
-  let exists = true;
-
-  while (exists) {
+  while (true) {
     code = generateRandomCode();
-    exists = await User.exists({ referralCode: code });
+    const exists = await User.exists({ referralCode: code });
+    if (!exists) break;
   }
-
   return code;
+};
+
+const createTokenAndRespond = (user, res) => {
+  const token = jwt.sign(
+    { userId: user._id, nickname: user.nickname, phoneNumber: user.phoneNumber },
+    JWT_SECRET
+  );
+  res.status(200).json({ loginSuccess: true, token, userId: user._id });
 };
 
 // 회원가입
 exports.signupUser = async (req, res) => {
   try {
-    const { phoneNumber, referralCode, nickname } = req.body;
-
+    const { phoneNumber, referralCode, nickname, provider, providerId } = req.body;
     if (phoneNumber && phoneNumber.length > 12) {
-      return res.status(400).json({
-        success: false,
-        message: "휴대폰 번호는 12자 이하로 입력해주세요.",
-      });
+      return res.status(400).json({ success: false, message: '휴대폰 번호는 12자 이하로 입력해주세요.' });
     }
-
-    // 고유 추천 코드 생성
-    const generatedCode = await generateUniqueReferralCode();
-
-    // 새로운 유저 생성
-    const user = new User({
-      ...req.body,
-      referralCode: generatedCode,
-    });
-
+    const referral = await generateUniqueReferralCode();
+    const user = new User({ ...req.body, provider: provider || 'local', providerId: provider !== 'local' ? providerId : undefined, referralCode: referral });
     const savedUser = await user.save();
 
-    // ✅ 추천인 코드가 유효한 경우 -> 추천한 유저의 referredBy 에 추가
     if (referralCode) {
-      const referringUser = await User.findOne({ referralCode });
-
-      if (referringUser) {
-        referringUser.referredBy = referringUser.referredBy || [];
-        referringUser.referredBy.push(nickname);
-        await referringUser.save();
+      const refUser = await User.findOne({ referralCode });
+      if (refUser) {
+        refUser.referredBy = refUser.referredBy || [];
+        refUser.referredBy.push(nickname);
+        await refUser.save();
       }
     }
 
     const token = jwt.sign({ userId: savedUser._id }, JWT_SECRET, { expiresIn: '3h' });
-
     return res.status(200).json({ success: true, token });
   } catch (err) {
-    console.error('회원가입 실패:', err.code, err);
+    console.error('회원가입 실패:', err);
     if (err.code === 11000) {
-      const duplicatedField = Object.keys(err.keyPattern)[0];
-      return res.status(400).json({
-        success: false,
-        message: `이미 사용 중인 ${duplicatedField}입니다.`,
-      });
+      const field = Object.keys(err.keyPattern)[0];
+      return res.status(400).json({ success: false, message: `이미 사용 중인 ${field}입니다.` });
     }
-
     return res.status(500).json({ success: false, err });
   }
 };
-
 
 // 사용자 로그인
 exports.loginUser = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
-    if (!user) {
-      return res.json({ loginSuccess: false, message: '이메일을 다시 확인하세요.' });
-    }
-
+    if (!user) return res.json({ loginSuccess: false, message: '이메일을 다시 확인하세요.' });
     const isMatch = await user.comparePassword(req.body.password);
-    if (!isMatch) {
-      return res.json({ loginSuccess: false, message: '비밀번호가 틀렸습니다' });
-    }
-
-    if (!user.is_active) {
-      return res.json({ loginSuccess: false, message: '승인 대기 중입니다.' });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id, nickname: user.nickname, phoneNumber: user.phoneNumber },
-      JWT_SECRET
-    );
-
-    // ✅ userId 포함해서 응답
-    res.status(200).json({
-      loginSuccess: true,
-      token,
-      userId: user._id
-    });
+    if (!isMatch) return res.json({ loginSuccess: false, message: '비밀번호가 틀렸습니다' });
+    if (!user.is_active) return res.json({ loginSuccess: false, message: '승인 대기 중입니다.' });
+    createTokenAndRespond(user, res);
   } catch (err) {
     console.error('로그인 실패:', err);
     res.status(400).send(err);
   }
 };
 
-exports.kakaoLogin = async (req, res) => {
+exports.socialLogin = async (req, res) => {
   try {
-    const { kakaoId, nickname } = req.body;
-
-    const user = await User.findOne({ kakaoId });
-
-    if (!user) {
-      // 회원 없음 → 회원가입 필요
-      return res.json({ exists: false });
-    }
-
-    if (!user.is_active) {
-      return res.json({ loginSuccess: false, message: '승인 대기 중입니다.' });
-    }
-
-    // JWT 토큰 생성 (기존 로그인 함수와 동일한 필드)
-    const token = jwt.sign(
-      { userId: user._id, nickname: user.nickname, phoneNumber: user.phoneNumber },
-      JWT_SECRET
-    );
-
-  
-
-    return res.status(200).json({
-      loginSuccess: true,
-      token,
-      userId: user._id
-    });
+    const { provider, providerId } = req.body;
+    const user = await User.findOne({ provider, providerId });
+    if (!user) return res.json({ exists: false });
+    if (!user.is_active) return res.json({ loginSuccess: false, message: '승인 대기 중입니다.' });
+    createTokenAndRespond(user, res);
   } catch (err) {
-    console.error('❌ kakaoLogin error:', err);
-    return res.status(500).json({ success: false, message: '서버 오류' });
+    console.error(`소셜 로그인 실패:`, err);
+    res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
 
