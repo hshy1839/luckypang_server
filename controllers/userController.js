@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const mongoose = require("mongoose");
 const multer = require('multer');
+const axios = require('axios')
 
 
 const storage = multer.diskStorage({
@@ -444,3 +445,90 @@ exports.uploadProfileImage = [
     }
   }
 ];
+
+function extractTID(responseText) {
+  const match = responseText.match(/<TID>(.*?)<\/TID>/);
+  return match ? match[1] : '';
+}
+
+function extractReturnCode(responseText) {
+  const match = responseText.match(/<RETURNCODE>(.*?)<\/RETURNCODE>/);
+  return match ? match[1] : '';
+}
+
+// 다날 본인인증 요청 (Flutter -> Express 호출용)
+exports.requestDanalAuth = async (req, res) => {
+  try {
+    const postData = {
+      TXTYPE: 'ITEMSEND',
+      SERVICE: 'UAS',
+      AUTHTYPE: '36',
+      CPID: 'B010007360',
+      CPPWD: '7@w6j3qx3ymCtXh',
+      TARGETURL: 'https://localhost:7778/api/users/danal/callback', // ✅ 실제 접근 가능한 주소로
+    };
+
+    const response = await axios.post('https://uas.teledit.com/uas/', new URLSearchParams(postData), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      responseType: 'text',
+      transformResponse: [(data) => data],
+    });
+
+    console.log('🧾 다날 응답:', response.data);
+
+    const tid = extractTID(response.data);
+    const code = extractReturnCode(response.data);
+    console.log('✅ TID:', tid);
+    console.log('✅ RETURNCODE:', code);
+
+    if (code !== '0000') {
+      return res.send(`<script>alert("다날 인증 요청 실패: ${code}"); window.close();</script>`);
+    }
+
+    const html = `
+      <form name="Ready" action="https://wauth.teledit.com/Danal/WebAuth/Web/Start.php" method="post">
+        <input type="hidden" name="TID" value="${tid}" />
+        <input type="hidden" name="BgColor" value="00" />
+        <input type="hidden" name="IsCharSet" value="EUC-KR" />
+        <input type="hidden" name="BackURL" value="https://localhost:7778/api/users/danal/back" />
+      </form>
+      <script>document.Ready.submit();</script>
+    `;
+
+    res.set({ 'Content-Type': 'text/html; charset=EUC-KR' });
+    res.send(html);
+  } catch (err) {
+    console.error('❌ 다날 본인인증 요청 실패:', err);
+    res.status(500).send('다날 인증 요청 실패');
+  }
+};
+
+
+// 다날 인증 콜백 (Danal 서버 -> 우리 서버)
+exports.handleDanalCallback = async (req, res) => {
+  try {
+    const TID = req.body.TID;
+    console.log('✅ 다날로부터 받은 TID:', TID);
+
+    const confirmData = {
+      TXTYPE: 'CONFIRM',
+      TID,
+      CONFIRMOPTION: '0',
+      IDENOPTION: '1',
+    };
+
+    const confirmRes = await axios.post('https://uas.teledit.com/uas/', new URLSearchParams(confirmData), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      responseType: 'text',
+    });
+
+    console.log('✅ 다날 최종 확인 응답:', confirmRes.data);
+
+    res.send('<script>alert("본인인증 성공"); window.close();</script>');
+  } catch (err) {
+    console.error('❌ 다날 확인 실패:', err);
+    res.status(500).send('본인인증 확인 실패');
+  }
+};
+
+

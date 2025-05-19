@@ -8,6 +8,10 @@ const userSchema = mongoose.Schema({
     required: true,
     default: 'local',
   },
+  user_type: {
+    type: String,
+    default: '3',
+  },
   providerId: {
     type: String, // ex) Google UID, Kakao ID, Apple sub
     required: function () {

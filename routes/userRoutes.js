@@ -15,7 +15,10 @@ const {
     getUserInfoByField,
     checkDuplicate,
     checkReferralCode,
-    uploadProfileImage
+    uploadProfileImage,
+    requestDanalAuth,
+    handleDanalCallback,
+
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -74,6 +77,9 @@ router.put('/userinfoUpdate', updateUserInfo );
 //유저 삭제
 router.delete('/userinfo/:id', deleteUser );
 router.post('/profile', uploadProfileImage);
+router.post('/danal/request-auth', requestDanalAuth);
+router.post('/danal/callback', handleDanalCallback);
+
 
 
 module.exports = router;
