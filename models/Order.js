@@ -33,7 +33,9 @@ const orderSchema = new mongoose.Schema({
     point: { type: Number, default: 0 },
     cash: { type: Number, default: 0 }
   },
-
+  trackingNumber: {
+    type: String,
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

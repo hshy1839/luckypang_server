@@ -5,6 +5,8 @@
   const Point = require('../models/Point');
   const Box = require('../models/Box/Box');
   const axios = require('axios');
+  const Product = require('../models/Product');
+
 
   const JWT_SECRET = 'jm_shoppingmall';
 
@@ -368,3 +370,91 @@ const PAYLETTER_ENDPOINT = 'https://testpgapi.payletter.com/v1.0/payments/reques
       return res.status(500).json({ success: false, message: '서버 오류' });
     }
   };
+
+  // PATCH /api/order/:id
+exports.updateOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const updateFields = req.body;
+
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: '토큰이 없습니다.' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: '해당 주문을 찾을 수 없습니다.' });
+    }
+
+    // 본인 주문만 수정 가능
+    if (order.user.toString() !== userId) {
+      return res.status(403).json({ success: false, message: '권한이 없습니다.' });
+    }
+
+    // 수정 가능한 필드만 반영 (보안상 중요)
+    const allowedFields = ['boxCount', 'paymentAmount', 'status', 'pointUsed'];
+    allowedFields.forEach((field) => {
+      if (updateFields.hasOwnProperty(field)) {
+        order[field] = updateFields[field];
+      }
+    });
+
+    await order.save();
+
+    const updatedOrder = await Order.findById(orderId)
+      .populate('box')
+      .populate('user');
+
+    return res.status(200).json({
+      success: true,
+      message: '주문이 성공적으로 업데이트되었습니다.',
+      order: updatedOrder,
+    });
+  } catch (err) {
+    console.error('❌ 주문 수정 오류:', err);
+    return res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};
+
+exports.updateTrackingNumber = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { trackingNumber } = req.body;
+
+    if (!trackingNumber) {
+      return res.status(400).json({ success: false, message: '운송장 번호가 필요합니다.' });
+    }
+
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: '토큰이 없습니다.' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    // 관리자 권한 확인
+    const user = await User.findById(userId);
+    if (!user || user.user_type !== '1') {
+      return res.status(403).json({ success: false, message: '관리자만 운송장 번호를 수정할 수 있습니다.' });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: '해당 주문을 찾을 수 없습니다.' });
+    }
+
+    order.trackingNumber = trackingNumber;
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: '운송장 번호가 성공적으로 저장되었습니다.',
+      trackingNumber: order.trackingNumber,
+    });
+  } catch (err) {
+    console.error('❌ 운송장 번호 저장 오류:', err);
+    return res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};
+

@@ -78,3 +78,4 @@ exports.createTermByCategory = async (req, res) => {
     });
   }
 };
+

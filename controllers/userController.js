@@ -5,7 +5,9 @@ const path = require('path');
 const fs = require('fs');
 const mongoose = require("mongoose");
 const multer = require('multer');
-const axios = require('axios')
+const axios = require('axios');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 
 
 const storage = multer.diskStorage({
@@ -97,8 +99,8 @@ exports.loginUser = async (req, res) => {
 
 exports.socialLogin = async (req, res) => {
   try {
-    const { provider, providerId } = req.body;
-    const user = await User.findOne({ provider, providerId });
+    const { provider, providerId, email } = req.body;
+    const user = await User.findOne({ provider, providerId, email });
     if (!user) return res.json({ exists: false });
     if (!user.is_active) return res.json({ loginSuccess: false, message: '승인 대기 중입니다.' });
     createTokenAndRespond(user, res);
@@ -532,3 +534,40 @@ exports.handleDanalCallback = async (req, res) => {
 };
 
 
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: '존재하지 않는 이메일입니다.' });
+
+    // ✅ 임시 비밀번호 생성 (8자리 랜덤 문자열)
+    const tempPassword = crypto.randomBytes(4).toString('hex');
+
+    user.password = tempPassword;   
+await user.save();              
+    // ✅ 이메일 발송 설정
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: 'luckyttangttang@gmail.com',
+        pass: 'dhzqdhcbmhvgaziy', // Gmail은 앱 비밀번호 사용
+      },
+    });
+
+    const mailOptions = {
+      from: 'luckyttangttang@gmail.com',
+      to: email,
+      subject: '[서비스명] 임시 비밀번호 안내',
+      text: `안녕하세요. 임시 비밀번호는 [${tempPassword}] 입니다. 로그인 후 반드시 비밀번호를 변경해 주세요.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({ success: true, message: '임시 비밀번호가 이메일로 전송되었습니다.' });
+
+  } catch (err) {
+    console.error('❌ 비밀번호 재설정 오류:', err);
+    return res.status(500).json({ message: '서버 오류' });
+  }
+};

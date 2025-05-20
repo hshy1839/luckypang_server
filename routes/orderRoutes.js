@@ -8,6 +8,8 @@ const {
     getUnboxedOrdersByUserId,
     refundOrder,
     getAllUnboxedOrders,
+    updateOrder,
+    updateTrackingNumber,
 } = require('../controllers/orderController');
 
 const router = express.Router();
@@ -28,6 +30,8 @@ router.get('/orders/unboxed/all', getAllUnboxedOrders);
 router.post('/orders/:id/refund', refundOrder);
 router.get('/orders/:id', getOrderById);
 router.post('/orders/:id/unbox', unboxOrder);
+router.patch('/order/:id', updateOrder);
+router.patch('/order/:id/tracking', updateTrackingNumber);
 module.exports = router;
 
 

@@ -4,7 +4,7 @@ const termSchema = mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['withdrawal', 'privacyTerm', 'serviceTerm'], // 카테고리 제한
+    enum: ['withdrawal', 'privacyTerm', 'serviceTerm', 'purchaseTerm', 'refundTerm'], // 카테고리 제한
   },
   content: {
     type: String,

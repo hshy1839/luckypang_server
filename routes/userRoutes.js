@@ -18,6 +18,7 @@ const {
     uploadProfileImage,
     requestDanalAuth,
     handleDanalCallback,
+    resetPassword,
 
 } = require('../controllers/userController');
 
@@ -79,6 +80,8 @@ router.delete('/userinfo/:id', deleteUser );
 router.post('/profile', uploadProfileImage);
 router.post('/danal/request-auth', requestDanalAuth);
 router.post('/danal/callback', handleDanalCallback);
+//비밀번호 찾기
+router.post('/reset-password', resetPassword);
 
 
 

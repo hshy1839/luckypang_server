@@ -42,7 +42,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // OPTIONS 추가
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // OPTIONS 추가
   credentials: true, // 인증 정보 포함 허용
   allowedHeaders: 'Content-Type, Authorization' // 허용된 헤더 지정
 }));
