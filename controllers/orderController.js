@@ -123,7 +123,7 @@ const PAYLETTER_ENDPOINT = 'https://testpgapi.payletter.com/v1.0/payments/reques
         return res.status(400).json({ success: false, message: 'userId가 필요합니다.' });
       }
 
-      const orders = await Order.find({ user: userId, status: 'paid' }) // ✅ 조건 추가 가능
+      const orders = await Order.find({ user: userId }) // ✅ 조건 추가 가능
         .populate('box')   // 박스 정보 포함
         .populate('user')  // 유저 정보 포함 (필요시)
         .sort({ createdAt: -1 }); // 최근순 정렬 (선택)
@@ -263,7 +263,6 @@ const PAYLETTER_ENDPOINT = 'https://testpgapi.payletter.com/v1.0/payments/reques
       const orders = await Order.find({
         user: userId,
         'unboxedProduct.product': { $exists: true, $ne: null },
-        status: 'paid',
       })
         .populate('box')
         .populate('user')
@@ -421,10 +420,10 @@ exports.updateOrder = async (req, res) => {
 exports.updateTrackingNumber = async (req, res) => {
   try {
     const orderId = req.params.id;
-    const { trackingNumber } = req.body;
+    const { trackingNumber, trackingCompany } = req.body;
 
-    if (!trackingNumber) {
-      return res.status(400).json({ success: false, message: '운송장 번호가 필요합니다.' });
+    if (!trackingNumber || !trackingCompany) {
+      return res.status(400).json({ success: false, message: '운송장 번호, 택배사 이름이 필요합니다.' });
     }
 
     const token = req.headers.authorization?.split(' ')[1];
@@ -436,7 +435,7 @@ exports.updateTrackingNumber = async (req, res) => {
     // 관리자 권한 확인
     const user = await User.findById(userId);
     if (!user || user.user_type !== '1') {
-      return res.status(403).json({ success: false, message: '관리자만 운송장 번호를 수정할 수 있습니다.' });
+      return res.status(403).json({ success: false, message: '관리자만 운송장 정보를 수정할 수 있습니다.' });
     }
 
     const order = await Order.findById(orderId);
@@ -445,15 +444,17 @@ exports.updateTrackingNumber = async (req, res) => {
     }
 
     order.trackingNumber = trackingNumber;
+    order.trackingCompany = trackingCompany;
     await order.save();
 
     return res.status(200).json({
       success: true,
-      message: '운송장 번호가 성공적으로 저장되었습니다.',
+      message: '운송장 정보가 성공적으로 저장되었습니다.',
       trackingNumber: order.trackingNumber,
+      trackingCompany: order.trackingCompany,
     });
   } catch (err) {
-    console.error('❌ 운송장 번호 저장 오류:', err);
+    console.error('❌ 운송장 정보 저장 오류:', err);
     return res.status(500).json({ success: false, message: '서버 오류' });
   }
 };

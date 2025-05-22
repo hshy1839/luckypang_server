@@ -99,8 +99,8 @@ exports.loginUser = async (req, res) => {
 
 exports.socialLogin = async (req, res) => {
   try {
-    const { provider, providerId, email } = req.body;
-    const user = await User.findOne({ provider, providerId, email });
+    const { provider, providerId } = req.body;
+    const user = await User.findOne({ provider, providerId });
     if (!user) return res.json({ exists: false });
     if (!user.is_active) return res.json({ loginSuccess: false, message: '승인 대기 중입니다.' });
     createTokenAndRespond(user, res);
@@ -558,7 +558,7 @@ await user.save();
     const mailOptions = {
       from: 'luckyttangttang@gmail.com',
       to: email,
-      subject: '[서비스명] 임시 비밀번호 안내',
+      subject: '[럭키탕] 임시 비밀번호 안내',
       text: `안녕하세요. 임시 비밀번호는 [${tempPassword}] 입니다. 로그인 후 반드시 비밀번호를 변경해 주세요.`,
     };
 
