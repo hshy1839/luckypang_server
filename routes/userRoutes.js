@@ -16,9 +16,8 @@ const {
     checkDuplicate,
     checkReferralCode,
     uploadProfileImage,
-    requestDanalAuth,
-    handleDanalCallback,
     resetPassword,
+    verifyBootpayAuth,
 
 } = require('../controllers/userController');
 
@@ -78,8 +77,7 @@ router.put('/userinfoUpdate', updateUserInfo );
 //유저 삭제
 router.delete('/userinfo/:id', deleteUser );
 router.post('/profile', uploadProfileImage);
-router.post('/danal/request-auth', requestDanalAuth);
-router.post('/danal/callback', handleDanalCallback);
+router.post('/bootpay/verify-auth', verifyBootpayAuth);
 //비밀번호 찾기
 router.post('/reset-password', resetPassword);
 
