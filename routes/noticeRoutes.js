@@ -40,6 +40,6 @@ router.post('/notice', upload, createNotice);
 router.get('/notice', getAllNotices);
 router.get('/notice/:id', getNoticeById);
 router.put('/notice/:id', upload, updateNotice);
-router.get('/notice/:id', deleteNotice);
+router.delete('/notice/:id', deleteNotice);
 
 module.exports = router;
