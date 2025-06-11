@@ -55,6 +55,8 @@ const createTokenAndRespond = (user, res) => {
 };
 
 // 회원가입
+const Point = require('../models/Point'); // 상단에 추가
+
 exports.signupUser = async (req, res) => {
   try {
     const { phoneNumber, referralCode, nickname, provider, providerId } = req.body;
@@ -65,7 +67,7 @@ exports.signupUser = async (req, res) => {
 
     const referral = await generateUniqueReferralCode();
 
-    // 추천인 로직 전에 가입자 객체 준비
+    // 신규 유저 생성
     const user = new User({
       ...req.body,
       provider: provider || 'local',
@@ -73,16 +75,36 @@ exports.signupUser = async (req, res) => {
       referralCode: referral,
     });
 
-    // 가입자 먼저 저장
-    const savedUser = await user.save();
+    const savedUser = await user.save(); // 먼저 저장 (user._id 필요)
 
-    // 🔥 추천코드가 있다면 refUser의 referredBy에 savedUser의 ID를 추가
+    // 추천 코드 유효 시 포인트 지급 로직
     if (referralCode) {
       const refUser = await User.findOne({ referralCode });
       if (refUser) {
+        // 추천한 사람: 1000P
+        await Point.create({
+          user: refUser._id,
+          type: '추가',
+          amount: 500,
+          description: '친구 추천 보상',
+          totalAmount: await calculateTotalPoint(refUser._id) + 500,
+          createdAt: new Date(),
+        });
+
+        // 추천받은 사람(가입자): 500P
+        await Point.create({
+          user: savedUser._id,
+          type: '추가',
+          amount: 1000,
+          description: '추천 가입 보상',
+          totalAmount: 1000, // 신규 가입자는 처음이므로 500 그대로
+          createdAt: new Date(),
+        });
+
+        // (선택) 추천인 관계 저장 (refUser 입장에서 누가 추천 받았는지)
         refUser.referredBy = refUser.referredBy || [];
-        refUser.referredBy.push(savedUser._id); // ✅ 추천한 사람 입장에서 추천 받은 유저 저장
-        await refUser.save(); // ✅ refUser만 업데이트
+        refUser.referredBy.push(savedUser._id);
+        await refUser.save();
       }
     }
 
@@ -99,6 +121,15 @@ exports.signupUser = async (req, res) => {
   }
 };
 
+
+const calculateTotalPoint = async (userId) => {
+  const points = await Point.find({ user: userId });
+  return points.reduce((acc, p) => {
+    if (p.type === '추가' || p.type === '환불') return acc + p.amount;
+    if (p.type === '감소') return acc - p.amount;
+    return acc;
+  }, 0);
+};
 
 
 
