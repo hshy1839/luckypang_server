@@ -35,6 +35,7 @@ app.use(cors({
     const allowedOrigins = [
       /^http:\/\/localhost(:\d+)?$/,
       /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+      /^http:\/\/13\.124\.224\.246(:\d+)?$/,
     ];
     if (!origin || allowedOrigins.some(regex => regex.test(origin))) {
       callback(null, true);
