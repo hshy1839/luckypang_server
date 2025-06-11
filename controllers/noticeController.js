@@ -190,3 +190,58 @@ exports.updateNotice = async (req, res) => {
     });
   }
 };
+
+// 공지사항 삭제
+exports.deleteNotice = async (req, res) => {
+  try {
+    const noticeId = req.params.id;
+
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(403).json({ success: false, message: 'Token is required' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    if (!decoded || !decoded.userId) {
+      return res.status(401).json({ success: false, message: 'Token does not contain userId' });
+    }
+
+    const notice = await Notice.findById(noticeId);
+    if (!notice) {
+      return res.status(404).json({
+        success: false,
+        message: '해당 공지사항을 찾을 수 없습니다.',
+      });
+    }
+
+    // 이미지가 있으면 파일도 삭제
+    if (notice.noticeImage && notice.noticeImage.length > 0) {
+      notice.noticeImage.forEach(imgPath => {
+        const fullPath = path.join(__dirname, '..', imgPath);
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+      });
+    }
+
+    await Notice.findByIdAndDelete(noticeId);
+
+    return res.status(200).json({
+      success: true,
+      message: '공지사항이 삭제되었습니다.',
+    });
+  } catch (err) {
+    console.error('📛 공지사항 삭제 실패:', err);
+    return res.status(500).json({
+      success: false,
+      message: '공지사항 삭제 중 오류가 발생했습니다.',
+      error: err.message,
+    });
+  }
+};
