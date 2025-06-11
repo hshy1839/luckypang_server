@@ -58,24 +58,37 @@ const createTokenAndRespond = (user, res) => {
 exports.signupUser = async (req, res) => {
   try {
     const { phoneNumber, referralCode, nickname, provider, providerId } = req.body;
+
     if (phoneNumber && phoneNumber.length > 12) {
       return res.status(400).json({ success: false, message: '휴대폰 번호는 12자 이하로 입력해주세요.' });
     }
+
     const referral = await generateUniqueReferralCode();
-    const user = new User({ ...req.body, provider: provider || 'local', providerId: provider !== 'local' ? providerId : undefined, referralCode: referral });
+
+    // 추천인 로직 전에 가입자 객체 준비
+    const user = new User({
+      ...req.body,
+      provider: provider || 'local',
+      providerId: provider !== 'local' ? providerId : undefined,
+      referralCode: referral,
+    });
+
+    // 가입자 먼저 저장
     const savedUser = await user.save();
 
+    // 🔥 추천코드가 있다면 refUser의 referredBy에 savedUser의 ID를 추가
     if (referralCode) {
       const refUser = await User.findOne({ referralCode });
       if (refUser) {
         refUser.referredBy = refUser.referredBy || [];
-        refUser.referredBy.push(nickname);
-        await refUser.save();
+        refUser.referredBy.push(savedUser._id); // ✅ 추천한 사람 입장에서 추천 받은 유저 저장
+        await refUser.save(); // ✅ refUser만 업데이트
       }
     }
 
     const token = jwt.sign({ userId: savedUser._id }, JWT_SECRET, { expiresIn: '3h' });
     return res.status(200).json({ success: true, token });
+
   } catch (err) {
     console.error('회원가입 실패:', err);
     if (err.code === 11000) {
@@ -85,6 +98,9 @@ exports.signupUser = async (req, res) => {
     return res.status(500).json({ success: false, err });
   }
 };
+
+
+
 
 // 사용자 로그인
 exports.loginUser = async (req, res) => {

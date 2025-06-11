@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+const { v4: uuidv4 } = require('uuid');
 
 const userSchema = mongoose.Schema({
   provider: {
@@ -37,12 +38,23 @@ const userSchema = mongoose.Schema({
       return this.provider === 'local';
     },
   },
+  
 
   nickname: { type: String, required: true },
   profileImage: { type: String },
 
   is_active: { type: Boolean, default: true },
   created_at: { type: Date, default: Date.now },
+
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true, // null 허용 + 중복 방지
+  },
+  referredBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
 });
 
 
@@ -74,6 +86,23 @@ userSchema.methods.comparePassword = function (candidatePassword) {
 };
 
 
+userSchema.pre("save", async function (next) {
+  const user = this;
+
+
+  // 추천코드 자동 생성
+  if (!user.referralCode) {
+    let code;
+    while (true) {
+      code = uuidv4().split('-')[0].toUpperCase();
+      const exists = await mongoose.model('User').exists({ referralCode: code });
+      if (!exists) break;
+    }
+    user.referralCode = code;
+  }
+
+  next();
+});
 
   
 const User = mongoose.model("User", userSchema);
