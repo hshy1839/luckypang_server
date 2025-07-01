@@ -28,6 +28,7 @@ const payletterRoutes = require('./routes/payletterRoutes');
 const shippingOrderRoutes = require('./routes/shippingOrderRoutes');
 const termRoutes = require('./routes/termRoutes');
 const faqRoutes = require('./routes/faqRoutes');
+const bootpayRoutes = require('./routes/bootpayRoutes');
 
 
 // CORS 설정 (여러 도메인 허용)
@@ -89,3 +90,4 @@ app.use('/api', eventRoutes);
 app.use('/api/payletter', payletterRoutes);
 app.use('/api', termRoutes);
 app.use('/api', faqRoutes);
+app.use('/api', bootpayRoutes);
