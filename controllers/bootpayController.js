@@ -23,7 +23,7 @@ exports.verifyBootpayAndCreateOrder = async (req, res) => {
     if (!user) return res.status(404).json({ message: '유저 없음' });
 
     // 2. 필수값 검증
-    const { receipt_id, boxId, amount, paymentType } = req.body;
+    const { receipt_id, boxId, amount, paymentType, pointUsed } = req.body;
     if (!receipt_id || !boxId || !amount || !paymentType) {
       return res.status(400).json({ message: '필수 값 누락' });
     }
@@ -67,7 +67,7 @@ exports.verifyBootpayAndCreateOrder = async (req, res) => {
       boxCount: 1,
       paymentType,
       paymentAmount: amount,
-      pointUsed: 0,
+      pointUsed: pointUsed,
       deliveryFee: { point: 0, cash: 0 },
       status: 'paid',
       externalOrderNo: verify.receipt_id,
@@ -75,6 +75,30 @@ exports.verifyBootpayAndCreateOrder = async (req, res) => {
 
     await newOrder.save();
 
+    console.log('🟢 새 주문 저장:', newOrder);
+if (pointUsed && pointUsed > 0) {
+  // 현재 누적 포인트 계산
+  const Point = require('../models/Point');
+  const userPoints = await Point.find({ user: user._id });
+  const currentTotal = userPoints.reduce((acc, p) => {
+    if (['추가', '환불'].includes(p.type)) return acc + p.amount;
+    if (p.type === '감소') return acc - p.amount;
+    return acc;
+  }, 0);
+
+  const updatedTotal = currentTotal - pointUsed;
+
+  // 로그 생성
+  const pointLog = new Point({
+    user: user._id,
+    type: '감소',
+    amount: pointUsed,
+    description: '럭키박스 구매',
+    relatedOrder: newOrder._id,
+    totalAmount: updatedTotal,
+  });
+  await pointLog.save();
+}
     return res.status(200).json({
       success: true,
       message: '결제 확인 및 주문 생성 완료',
