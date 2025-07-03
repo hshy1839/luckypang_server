@@ -333,8 +333,16 @@ exports.updateProduct = async (req, res) => {
   
       await product.save();
   
-      return res.status(200).json({ success: true, product });
+     await Box.updateMany(
+      { "products.product": product._id },
+      { $set: { "products.$[elem].probability": product.probability } },
+      { arrayFilters: [{ "elem.product": product._id }] }
+    );
+    console.log(`[LOG] 상품ID(${product._id})가 포함된 모든 박스의 확률을 ${product.probability}로 동기화`);
+
+    return res.status(200).json({ success: true, product });
   
+      
     } catch (err) {
       console.error('제품 수정 중 오류 발생:', err);
       return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });

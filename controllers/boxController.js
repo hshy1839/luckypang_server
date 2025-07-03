@@ -206,6 +206,8 @@ exports.getBox = async (req, res) => {
             return res.status(404).json({ success: false, message: '제품을 찾을 수 없습니다.' });
         }
 
+    
+
         return res.status(200).json({ success: true, box });
 
     } catch (err) {

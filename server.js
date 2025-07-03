@@ -82,7 +82,7 @@ app.use('/api', boxRoutes);
 app.use('/api', shippingRoutes);
 app.use('/api', qnaRoutes);
 app.use('/api', totalRoutes);
-// app.use('/api', couponRoutes);
+app.use('/api', couponRoutes);
 app.use('/api', promotionRoutes);
 app.use('/api', pointRoutes);
 app.use('/api', giftCodeRoutes);
