@@ -591,3 +591,21 @@ await user.save();
     return res.status(500).json({ message: '서버 오류' });
   }
 };
+
+// 전화번호로 이메일 찾기
+exports.findEmailByPhone = async (req, res) => {
+  const { phoneNumber } = req.query;
+  if (!phoneNumber) {
+    return res.status(400).json({ success: false, message: '휴대폰 번호가 필요합니다.' });
+  }
+  try {
+    const user = await User.findOne({ phoneNumber });
+    if (!user) {
+      return res.status(404).json({ success: false, message: '이메일을 찾을 수 없습니다.' });
+    }
+    return res.status(200).json({ success: true, email: user.email });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};
+

@@ -18,6 +18,7 @@ const {
     uploadProfileImage,
     resetPassword,
     verifyBootpayAuth,
+    findEmailByPhone,
 
 } = require('../controllers/userController');
 
@@ -80,7 +81,8 @@ router.post('/profile', uploadProfileImage);
 router.post('/bootpay/verify-auth', verifyBootpayAuth);
 //비밀번호 찾기
 router.post('/reset-password', resetPassword);
-
+// 이메일 찾기
+router.get('/findEmail', findEmailByPhone);
 
 
 module.exports = router;
