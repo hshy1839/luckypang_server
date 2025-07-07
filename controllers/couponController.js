@@ -183,17 +183,25 @@ exports.useCoupon = async (req, res) => {
       return res.status(400).json({ success: false, message: '쿠폰 코드가 필요합니다.' });
     }
 
-  
     const coupon = await Coupon.findOne({ code, isActive: true });
     if (!coupon) {
       return res.status(404).json({ success: false, message: '유효하지 않은 쿠폰입니다.' });
+    }
+
+    // 🔥 이미 사용한 쿠폰 체크
+    const alreadyUsed = await Point.findOne({
+      user: userId,
+      description: { $regex: coupon.name }, // description에 쿠폰 이름 포함 여부
+      type: '추가'
+    });
+    if (alreadyUsed) {
+      return res.status(400).json({ success: false, message: '이미 사용한 쿠폰입니다.' });
     }
 
     const now = new Date();
     if (now < new Date(coupon.validFrom) || now > new Date(coupon.validUntil)) {
       return res.status(400).json({ success: false, message: '쿠폰 사용 가능 기간이 아닙니다.' });
     }
-
 
     const point = new Point({
       user: userId,
@@ -203,7 +211,6 @@ exports.useCoupon = async (req, res) => {
     });
     await point.save();
 
-    
     return res.status(200).json({
       success: true,
       message: `${coupon.discountValue}포인트가 적립되었습니다.`,
