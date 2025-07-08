@@ -1,5 +1,10 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models/User');
+const  Order  = require('../models/Order');
+const { qnaAnswer } = require('../models/QnaAnswer');
+const { qnaQuestion } = require('../models/QnaQuestion');
+const Shipping = require('../models/Shipping');
+const ShippingOrder = require('../models/ShippingOrder');
 const JWT_SECRET = 'jm_shoppingmall';
 const path = require('path');
 const fs = require('fs');
@@ -609,3 +614,41 @@ exports.findEmailByPhone = async (req, res) => {
   }
 };
 
+exports.withDrawUser = async (req, res) => {
+  // 1. 토큰 꺼내고 검증
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ success: false, message: '토큰이 없습니다.' });
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    return res.status(401).json({ success: false, message: '유효하지 않은 토큰입니다.' });
+  }
+  const userId = decoded.userId;
+
+  // 2. 유저 존재 확인
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
+
+  // 3. 연관 데이터 삭제
+  await Promise.all([
+    Point.deleteMany({ user: userId }),
+    Order.deleteMany({ user: userId }),
+    qnaQuestion.deleteMany({ user: userId }),
+    qnaAnswer.deleteMany({ userId: userId }),
+    Shipping.deleteMany({ userId: userId }),
+    ShippingOrder.deleteMany({ userId:  userId }),
+  ]);
+
+  // 4. user 삭제 (최종)
+  await User.findByIdAndDelete(userId);
+
+  // 5. (옵션) referredBy 배열에서도 제거
+  await User.updateMany(
+    { referredBy: userId },
+    { $pull: { referredBy: userId } }
+  );
+
+  return res.status(200).json({ success: true, message: '회원 탈퇴가 완료되었습니다.' });
+};

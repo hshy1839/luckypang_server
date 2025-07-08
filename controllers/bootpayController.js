@@ -25,7 +25,7 @@ exports.verifyBootpayAndCreateOrder = async (req, res) => {
     if (!user) return res.status(404).json({ message: '유저 없음' });
 
     // 2. 필수값 검증
-    const { receipt_id, boxId, amount, paymentType, pointUsed } = req.body;
+    const { receipt_id, boxId, amount, paymentType, pointUsed,boxCount = 1 } = req.body;
     if (!receipt_id || !boxId || !amount || !paymentType) {
       return res.status(400).json({ message: '필수 값 누락' });
     }
@@ -63,21 +63,24 @@ exports.verifyBootpayAndCreateOrder = async (req, res) => {
     if (!box) return res.status(404).json({ message: '박스 없음' });
 
     // 8. 주문 생성
-    const newOrder = new Order({
-      user: user._id,
-      box: box._id,
-      boxCount: 1,
-      paymentType,
-      paymentAmount: amount,
-      pointUsed: pointUsed,
-      deliveryFee: { point: 0, cash: 0 },
-      status: 'paid',
-      externalOrderNo: verify.receipt_id,
-    });
+    const createdOrders = [];
+for (let i = 0; i < boxCount; i++) {
+  const newOrder = new Order({
+    user: user._id,
+    box: box._id,
+    boxCount: 1, // 단건 처리
+    paymentType,
+    paymentAmount: Math.floor(amount / boxCount), // n등분
+    pointUsed: Math.floor((pointUsed || 0) / boxCount), // n등분
+    deliveryFee: { point: 0, cash: 0 },
+    status: 'paid',
+    externalOrderNo: verify.receipt_id,
+  });
+  await newOrder.save();
+  createdOrders.push(newOrder);
+}
 
-    await newOrder.save();
-
-    console.log('🟢 새 주문 저장:', newOrder);
+  console.log('🟢 새 주문 저장:', createdOrders.map(o => o._id));
 if (pointUsed && pointUsed > 0) {
   // 현재 누적 포인트 계산
   const Point = require('../models/Point');
@@ -96,7 +99,7 @@ if (pointUsed && pointUsed > 0) {
     type: '감소',
     amount: pointUsed,
     description: '럭키박스 구매',
-    relatedOrder: newOrder._id,
+    relatedOrder: createdOrders[0]?._id,
     totalAmount: updatedTotal,
   });
   await pointLog.save();
@@ -104,7 +107,7 @@ if (pointUsed && pointUsed > 0) {
     return res.status(200).json({
       success: true,
       message: '결제 확인 및 주문 생성 완료',
-      orderId: newOrder._id,
+      orderId: createdOrders[0]?._id,
     });
 
   } catch (err) {
