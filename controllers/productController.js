@@ -80,7 +80,6 @@ exports.createProduct = async (req, res) => {
         consumerPrice,
         price,
         shippingFee,
-        shippingInfo,
         option,
         description,
         sourceLink,
@@ -99,7 +98,6 @@ exports.createProduct = async (req, res) => {
         consumerPrice,
         price,
         shippingFee,
-        shippingInfo,
         option,
         description,
         sourceLink,
@@ -322,7 +320,7 @@ exports.updateProduct = async (req, res) => {
       const fields = [
         'name', 'brand', 'category', 'probability',
         'consumerPrice', 'price', 'shippingFee',
-        'shippingInfo', 'option', 'description', 'sourceLink','refundProbability'
+         'option', 'description', 'sourceLink','refundProbability'
       ];
   
       fields.forEach(field => {

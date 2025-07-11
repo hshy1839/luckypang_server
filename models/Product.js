@@ -27,7 +27,6 @@
     totalPrice: { type: Number }, // 실결제가 (price + shippingFee) - 후처리로 계산 가능
   
     // 배송 관련
-    shippingInfo: { type: String }, // ex. "3만원 이상 무료배송", "제주도 추가 3,000원" 등
   
     refundProbability: { type: String },
   

@@ -79,6 +79,12 @@ for (let i = 0; i < boxCount; i++) {
   await newOrder.save();
   createdOrders.push(newOrder);
 }
+await Notification.create({
+  userId: user._id,
+  message: '박스 결제가 완료되었습니다.',
+  url: '/order'
+});
+
 
   console.log('🟢 새 주문 저장:', createdOrders.map(o => o._id));
 if (pointUsed && pointUsed > 0) {
@@ -207,6 +213,11 @@ exports.verifyBootpayAndPayShipping = async (req, res) => {
     order.externalOrderNo = verify.receipt_id;
     await order.save();
 
+    await Notification.create({
+  userId: user._id,
+  message: '배송비 결제가 완료되었습니다.',
+  url: '/order'
+});
     // 포인트 차감 로그 (있으면)
     if (pointUsed && pointUsed > 0) {
       const userPoints = await Point.find({ user: userId });

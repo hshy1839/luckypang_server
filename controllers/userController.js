@@ -16,6 +16,8 @@ const crypto = require('crypto');
 const iconv = require('iconv-lite');
 const qs = require('querystring');
 const Bootpay = require('@bootpay/backend-js').default;
+const Notification = require('../models/Notification');
+
 
 const requestIp = require('request-ip');
 
@@ -96,6 +98,13 @@ exports.signupUser = async (req, res) => {
           createdAt: new Date(),
         });
 
+       await Notification.create({
+      userId: refUser._id,
+      message: `친구 추천 보상 500P가 적립되었습니다.`,
+      url: '/pointInfo',
+      createdAt: new Date(),
+    });
+
         // 추천받은 사람(가입자): 500P
         await Point.create({
           user: savedUser._id,
@@ -105,6 +114,13 @@ exports.signupUser = async (req, res) => {
           totalAmount: 1000, // 신규 가입자는 처음이므로 500 그대로
           createdAt: new Date(),
         });
+
+        await Notification.create({
+      userId: savedUser._id,
+      message: `추천 가입 보상 1000P가 적립되었습니다.`,
+      url: '/pointInfo',
+      createdAt: new Date(),
+    });
 
         // (선택) 추천인 관계 저장 (refUser 입장에서 누가 추천 받았는지)
         refUser.referredBy = refUser.referredBy || [];

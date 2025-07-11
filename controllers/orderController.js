@@ -6,6 +6,7 @@
   const Box = require('../models/Box/Box');
   const axios = require('axios');
   const Product = require('../models/Product');
+  const Notification = require('../models/Notification');
 
 
   const JWT_SECRET = 'jm_shoppingmall';
@@ -73,6 +74,12 @@ const PAYLETTER_ENDPOINT = 'https://testpgapi.payletter.com/v1.0/payments/reques
         await newOrder.save();
         createdOrders.push(newOrder);
       }
+
+      await Notification.create({
+  userId: userId,
+  message: `박스 주문이 완료되었습니다.`,
+  url: '/order', 
+});
 
       // ✅ 포인트 차감 한 번만 처리
       if (pointUsed > 0) {
