@@ -4,11 +4,14 @@ const {
     getQuestion,
     getAllQuestions,
     getQuestionById,
-    getUnansweredQuestionsCount
+    getUnansweredQuestionsCount,
 } = require('../controllers/qnaQuestionController');
 const {
     addAnswer, // 답변 등록 함수 추가
     getAnswersByQuestionId, // 질문에 연결된 답변 가져오기 함수 추가
+
+    deleteAnswer,
+    updateAnswer,
 } = require('../controllers/qnaAnswerController');
 
 const router = express.Router();
@@ -28,6 +31,8 @@ router.get('/qnaQuestion/unansweredCount', getUnansweredQuestionsCount);
 
 // 답변 관련 라우트
 router.post('/qnaQuestion/addAnswer/:id', addAnswer); // 특정 질문에 답변 추가
-router.get('/qnaQuestion/getAnswers/:id', getAnswersByQuestionId); // 특정 질문에 연결된 답변 가져오기
+router.get('/qnaQuestion/getAnswers/:id', getAnswersByQuestionId);
+router.delete('/qnaAnswer/:answerId', deleteAnswer);
+router.put('/qnaAnswer/:answerId', updateAnswer);
 
 module.exports = router;
