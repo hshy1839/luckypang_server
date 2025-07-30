@@ -668,3 +668,27 @@ exports.withDrawUser = async (req, res) => {
 
   return res.status(200).json({ success: true, message: '회원 탈퇴가 완료되었습니다.' });
 };
+
+exports.searchUsers = async (req, res) => {
+  const { keyword } = req.query;
+
+  if (!keyword) {
+    return res.status(400).json({ success: false, message: '검색어가 필요합니다.' });
+  }
+
+  try {
+    const regex = new RegExp(keyword, 'i'); // 대소문자 구분 없이 검색
+    const users = await User.find({
+      $or: [
+        { nickname: regex },
+        { email: regex },
+        { phoneNumber: regex }
+      ]
+    }).select('_id nickname email phoneNumber');
+
+    res.status(200).json({ success: true, users });
+  } catch (err) {
+    console.error('사용자 검색 오류:', err);
+    res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};

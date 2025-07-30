@@ -20,6 +20,7 @@ const {
     verifyBootpayAuth,
     findEmailByPhone,
     withDrawUser,
+    searchUsers,
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -84,6 +85,7 @@ router.post('/reset-password', resetPassword);
 // 이메일 찾기
 router.get('/findEmail', findEmailByPhone);
 router.delete('/withdraw', withDrawUser);
+router.get('/search', searchUsers);
 
 
 module.exports = router;
