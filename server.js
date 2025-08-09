@@ -39,7 +39,9 @@ const allowedOrigins = [
   'https://luckytang-admin.onrender.com',
   // 필요 시 여기에 관리자/클라이언트 도메인 추가
 ];
-
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true); // Postman 등
