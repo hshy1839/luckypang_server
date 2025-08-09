@@ -35,10 +35,8 @@ const notificationRoutes = require('./routes/notificationRoutes');
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
-      /^http:\/\/localhost(:\d+)?$/,
-      /^http:\/\/127\.0\.0\.1(:\d+)?$/,
-      /^http:\/\/13\.124\.224\.246(:\d+)?$/,
-      /^https:\/\/luckytang-admin\.onrender\.com$/
+  'http://localhost:3000',
+  'https://luckytang-admin.onrender.com',
     ];
     if (!origin || allowedOrigins.some(regex => regex.test(origin))) {
       callback(null, true);
