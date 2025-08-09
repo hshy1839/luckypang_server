@@ -41,24 +41,15 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Postman, 서버 사이드 등 origin 없는 요청 허용
-    if (!origin) return callback(null, true);
-
-    // 문자열/정규식 혼용 지원
-    const ok = allowedOrigins.some((rule) => {
-      if (rule instanceof RegExp) return rule.test(origin);
-      return rule === origin;
-    });
-
-    if (ok) callback(null, true);
-    else callback(new Error(`Not allowed by CORS: ${origin}`));
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // Postman 등
+    const ok = allowedOrigins.includes(origin) || /\.localhost:\d+$/.test(origin);
+    return ok ? cb(null, true) : cb(new Error(`Not allowed by CORS: ${origin}`));
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization','X-Requested-With'],
 }));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
