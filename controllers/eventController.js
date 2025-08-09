@@ -190,3 +190,69 @@ exports.updateEvent = async (req, res) => {
     });
   }
 };
+
+exports.deleteEvent = async (req, res) => {
+  try {
+    const eventId = req.params.id;
+
+    // JWT 체크
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(403).json({ success: false, message: 'Token is required' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    if (!decoded || !decoded.userId) {
+      return res.status(401).json({ success: false, message: 'Token does not contain userId' });
+    }
+
+    // 이벤트 조회
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: '해당 이벤트를 찾을 수 없습니다.',
+      });
+    }
+
+    // 이미지 파일 삭제
+    if (Array.isArray(event.eventImage) && event.eventImage.length > 0) {
+      for (const imgPath of event.eventImage) {
+        try {
+          // 저장된 경로가 "/uploads/..." 로 시작하므로 선행 "/" 제거 후 프로젝트 루트 기준으로 변환
+          const relative = imgPath.replace(/^\//, ''); // "uploads/event_images/xxx.png"
+          const fullPath = path.join(process.cwd(), relative);
+
+          if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath);
+          }
+        } catch (fileErr) {
+          // 파일 하나 삭제 실패해도 전체 삭제 흐름은 진행
+          console.error('📛 이미지 파일 삭제 실패:', fileErr);
+        }
+      }
+    }
+
+    // DB 삭제
+    await event.deleteOne();
+
+    return res.status(200).json({
+      success: true,
+      message: '이벤트가 삭제되었습니다.',
+      deletedId: eventId,
+    });
+  } catch (err) {
+    console.error('📛 이벤트 삭제 실패:', err);
+    return res.status(500).json({
+      success: false,
+      message: '이벤트 삭제 중 오류가 발생했습니다.',
+      error: err.message,
+    });
+  }
+};
