@@ -64,6 +64,135 @@ const createTokenAndRespond = (user, res) => {
 // 회원가입
 const Point = require('../models/Point'); // 상단에 추가
 
+// 상단 require 아래 유틸/블랙리스트 부분 교체
+
+let blacklistSet = new Set();
+const BL_PATH = path.join(__dirname, '..', 'blacklist.txt');
+
+function escapeRegex(s = '') {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// 간단 normalize (우회 방지 기본치)
+function normalize(s = '') {
+  let out = String(s).toLowerCase();
+
+  // 한글 'ㅣ'(세로획) → 영문 l
+  out = out.replace(/ㅣ/g, 'l');
+
+  // leet 치환
+  out = out
+    .replaceAll('0','o')
+    .replaceAll('1','l')
+    .replaceAll('3','e')
+    .replaceAll('4','a')
+    .replaceAll('5','s')
+    .replaceAll('7','t')
+    .replaceAll('8','b');
+
+  // 공백/제로폭 제거
+  out = out.replace(/\s+/g, '');
+  out = out.replace(/[\u200B-\u200D\uFEFF]/g, '');
+
+  // 한글/영문/숫자만
+  out = out.replace(/[^a-z0-9가-힣ㄱ-ㅎㅏ-ㅣ]/g, '');
+  return out;
+}
+
+function loadBlacklist() {
+  try {
+    let raw = fs.readFileSync(BL_PATH, 'utf8');
+    // BOM 제거
+    if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+
+    blacklistSet = new Set(
+      raw
+        .split(/\r?\n/)
+        .map(w => normalize(w))
+        .filter(Boolean)
+    );
+  } catch (e) {
+    blacklistSet = new Set();
+  }
+}
+
+// 파일 변경 시 자동 리로드(선택)
+try {
+  fs.watch(BL_PATH, { persistent: false }, () => {
+    loadBlacklist();
+  });
+} catch (_) {}
+loadBlacklist();
+
+function isBlacklisted(nickname) {
+  const norm = normalize(nickname);
+  for (const bad of blacklistSet) {
+    if (!bad) continue;
+    if (norm.includes(bad)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// 파일 변경 시 자동 리로드(선택)
+fs.watch(BL_PATH, { persistent: false }, () => {
+  loadBlacklist();
+});
+loadBlacklist();
+
+function isBlacklisted(nickname) {
+  const norm = normalize(nickname);
+  for (const bad of blacklistSet) {
+    if (!bad) continue;
+    if (norm.includes(bad)) return true; // 과하면 equals/startsWith로 완화 가능
+  }
+  return false;
+}
+
+async function validateNickname(nickname, { excludeUserId = null } = {}) {
+  const raw = nickname;
+  const trimmed = String(nickname || '').trim();
+  const norm = normalize(trimmed);
+
+  const reasons = [];
+
+  if (trimmed.length < 2 || trimmed.length > 8) {
+    reasons.push('length');
+  }
+
+  const blacklisted = isBlacklisted(trimmed);
+  if (blacklisted) {
+    reasons.push('blacklist');
+  }
+
+  // 대소문자 무시 완전일치(정규식) + 자기 자신 제외
+  const regex = new RegExp(`^${escapeRegex(trimmed)}$`, 'i');
+  const dupQuery = excludeUserId
+    ? { _id: { $ne: excludeUserId }, nickname: regex }
+    : { nickname: regex };
+
+  let exists = false;
+  try {
+    exists = await User.exists(dupQuery);
+  } catch (e) {
+  }
+
+  if (exists) reasons.push('duplicate');
+
+  const ok = reasons.length === 0;
+  const message = ok
+    ? '사용 가능한 닉네임 입니다.'
+    : (reasons.includes('blacklist')
+        ? '사용할 수 없는 닉네임 입니다.'
+        : reasons.includes('duplicate')
+          ? '이미 사용 중인 닉네임입니다.'
+          : '닉네임은 2~8자입니다.');
+
+  return { ok, reasons, message, exists: !!exists };
+}
+
+
 exports.signupUser = async (req, res) => {
   try {
     const { phoneNumber, referralCode, nickname, provider, providerId } = req.body;
@@ -171,13 +300,22 @@ exports.loginUser = async (req, res) => {
 
 exports.socialLogin = async (req, res) => {
   try {
-    const { provider, providerId } = req.body;
+    const { provider, providerId, email } = req.body;
+    console.log(`🔐 socialLogin req: provider=${provider}, providerId=${providerId}, email=${email || '(none)'}`);
+
     const user = await User.findOne({ provider, providerId });
-    if (!user) return res.json({ exists: false });
-    if (!user.is_active) return res.json({ loginSuccess: false, message: '승인 대기 중입니다.' });
+    if (!user) {
+      console.log('ℹ️ socialLogin: 기존 회원 없음 → 회원가입 플로우로');
+      return res.json({ exists: false });
+    }
+    if (!user.is_active) {
+      console.log(`⛔ socialLogin: 비활성 사용자 userId=${user._id}`);
+      return res.json({ loginSuccess: false, message: '승인 대기 중입니다.' });
+    }
+    console.log(`🟢 socialLogin: 로그인 성공 userId=${user._id}`);
     createTokenAndRespond(user, res);
   } catch (err) {
-    console.error(`소셜 로그인 실패:`, err);
+    console.error('❌ 소셜 로그인 실패:', err);
     res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
@@ -302,17 +440,25 @@ exports.updateUserInfo = async (req, res) => {
     const user = await User.findById(decoded.userId);
     if (!user) return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
 
-    if (nickname) user.nickname = nickname;
+    if (nickname) {
+      // ✅ 자기 자신 제외하고 검증
+      const { ok, message, reasons } = await validateNickname(nickname, { excludeUserId: user._id });
+      if (!ok) {
+        return res.status(400).json({ success: false, message, reasons });
+      }
+      user.nickname = nickname;
+    }
+
     if (phoneNumber) user.phoneNumber = phoneNumber;
 
     await user.save();
-
     return res.status(200).json({ success: true, message: '사용자 정보가 업데이트되었습니다.' });
   } catch (err) {
     console.error('사용자 정보 수정 실패:', err);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };
+
 
 // 활성화 상태 및 권한 수정
 exports.updateIsActive = async (req, res) => {
@@ -443,15 +589,22 @@ exports.getUserInfoByField = async (req, res) => {
   }
 };
 
-exports.checkDuplicate=  async (req, res) => {
+exports.checkDuplicate = async (req, res) => {
   const { nickname, email } = req.body;
 
   try {
-    if (nickname) {
-      const exists = await User.findOne({ nickname });
-      return res.json({ exists: !!exists });
+    if (nickname != null) {
+      const result = await validateNickname(nickname);
+      // 하위호환(exists) + 신규(ok/reasons/message)
+      return res.json({
+        exists: result.exists,
+        ok: result.ok,
+        reasons: result.reasons,
+        message: result.message,
+      });
     }
-    if (email) {
+
+    if (email != null) {
       const exists = await User.findOne({ email });
       return res.json({ exists: !!exists });
     }
@@ -462,6 +615,7 @@ exports.checkDuplicate=  async (req, res) => {
     return res.status(500).json({ message: '서버 오류' });
   }
 };
+
 
 exports.checkReferralCode=  async (req, res) => {
   const { referralCode } = req.body;
@@ -514,7 +668,6 @@ exports.uploadProfileImage = [
         imagePath,
       });
     } catch (err) {
-      console.error('프로필 이미지 업로드 오류:', err);
       return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
   }
@@ -546,7 +699,6 @@ exports.verifyBootpayAuth = async (req, res) => {
     await Bootpay.getAccessToken();
     const response = await Bootpay.certificate(receipt_id);
 
-    console.log('📦 certificate 응답:', response);
 
     if (response && response.authenticate_data) {
       const auth = response.authenticate_data;
@@ -566,7 +718,6 @@ exports.verifyBootpayAuth = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Bootpay 본인인증 검증 실패:', error);
     return res.status(500).json({ success: false, message: '본인인증 검증 중 오류가 발생했습니다.' });
   }
 };
@@ -608,7 +759,6 @@ await user.save();
     return res.status(200).json({ success: true, message: '임시 비밀번호가 이메일로 전송되었습니다.' });
 
   } catch (err) {
-    console.error('❌ 비밀번호 재설정 오류:', err);
     return res.status(500).json({ message: '서버 오류' });
   }
 };
