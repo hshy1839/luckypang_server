@@ -37,6 +37,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'https://luckytang-admin.onrender.com',
+  'http://13.124.224.246:7778',
   // 필요 시 여기에 관리자/클라이언트 도메인 추가
 ];
 app.get('/ping', (req, res) => {
