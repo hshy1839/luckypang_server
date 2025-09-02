@@ -4,6 +4,7 @@ const http = require('http');
 const https = require('https');
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
 
 const jwt = require('jsonwebtoken');
 const connectDB = require('./db');
@@ -30,6 +31,7 @@ const termRoutes = require('./routes/termRoutes');
 const faqRoutes = require('./routes/faqRoutes');
 const bootpayRoutes = require('./routes/bootpayRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const { verifyS3Connection } = require('./aws/s3');
 
 const app = express();
 
@@ -59,6 +61,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 connectDB();
+
+verifyS3Connection().then((ok) => {
+  if (!ok) {
+    console.warn('⚠️  S3 연결에 문제가 있습니다. 업로드/다운로드 기능 확인 필요');
+  }
+});
 
 /** (선택) 프록시 뒤에서 IP/프로토콜 신뢰 */
 app.set('trust proxy', true);

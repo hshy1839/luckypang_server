@@ -1,47 +1,49 @@
+// routes/promotionRoutes.js
 const express = require('express');
-const { 
-    createPromotion, 
-    getAllPromotions,
-    getPromotion,
-    deletePromotion,
-    updatePromotion
-
+const {
+  createPromotion,
+  getAllPromotions,
+  getPromotion,
+  deletePromotion,
+  updatePromotion,
 } = require('../controllers/promotionController');
 
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid'); // ✅ 이거 추가
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    if (file.fieldname === 'promotionImage') {
-      cb(null, 'uploads/promotion_images/');
-    } else if (file.fieldname === 'promotionDetailImage') {
-      cb(null, 'uploads/promotion_details/');
-    } else {
-      cb(new Error('Invalid field name'), null);
-    }
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${uuidv4()}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
-  },
+// ✅ S3 업로드 미들웨어 사용
+const { upload } = require('../middlewares/upload');
+
+// (선택) 요청 로깅
+router.use((req, res, next) => {
+  // console.log(`${req.method} ${req.originalUrl}`);
+  next();
 });
 
-const upload = multer({ storage: storage }).fields([
+// 생성: 대표 이미지 1장, 상세 이미지 여러 장
+router.post(
+  '/promotion/create',
+  upload.fields([
     { name: 'promotionImage', maxCount: 1 },
     { name: 'promotionDetailImage', maxCount: 10 },
-]);
-// 디버깅 로그 추가: 요청 경로 확인
-router.use((req, res, next) => {
-    next();
-});
+  ]),
+  createPromotion
+);
 
-router.post('/promotion/create',upload, createPromotion);
+// 전체/단건 조회
 router.get('/promotion/read', getAllPromotions);
 router.get('/promotion/read/:id', getPromotion);
-router.put('/promotion/:id', updatePromotion);
+
+// 수정: 이미지 교체/추가/유지 모두 지원하려면 파일 필드 허용해야 함
+router.put(
+  '/promotion/:id',
+  upload.fields([
+    { name: 'promotionImage', maxCount: 1 },
+    { name: 'promotionDetailImage', maxCount: 10 },
+  ]),
+  updatePromotion
+);
+
+// 삭제
 router.delete('/promotion/delete/:id', deletePromotion);
 
 module.exports = router;
