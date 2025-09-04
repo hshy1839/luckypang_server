@@ -22,6 +22,7 @@ function dirByField(field) {
   if (field === 'noticeImage') return 'notice_images';  
   if (field === 'promotionImage') return 'promotion_images';        
   if (field === 'promotionDetailImage') return 'promotion_details';  
+  if (field === 'profileImage') return 'profile_images';
   return 'others';
 }
 

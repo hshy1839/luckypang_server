@@ -98,6 +98,7 @@ app.use('/api', termRoutes);
 app.use('/api', faqRoutes);
 app.use('/api', bootpayRoutes);
 app.use('/api', notificationRoutes);
+app.use('/media', require('./routes/media')); 
 
 /** ====== 2) HTTP → HTTPS 리다이렉트 (선택) ======
  * EC2 보안그룹에서 80/443 허용하는 경우 유용.
