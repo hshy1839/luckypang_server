@@ -1,37 +1,21 @@
+// routes/orders.js
 const express = require('express');
-const { 
-    addToOrder, 
-    getOrdersByUserId,
-    getAllOrders,
-    getOrderById,
-    unboxOrder,
-    getUnboxedOrdersByUserId,
-    refundOrder,
-    getAllUnboxedOrders,
-    updateOrder,
-    updateTrackingNumber,
-} = require('../controllers/orderController');
-
 const router = express.Router();
+const orderCtrl = require('../controllers/orderController');
 
-// 디버깅 로그 추가: 요청 경로 확인
-router.use((req, res, next) => {
-    next();
-});
+router.post('/order', orderCtrl.addToOrder);
+router.get('/orders', orderCtrl.getOrdersByUserId); // ?userId=&paged=true&page=&limit=
+router.get('/orders/boxes', orderCtrl.getBoxesPaged); // ?userId=&status=paid&unboxed=false&page=&limit=
+router.get('/orders/unboxed-products', orderCtrl.getUnboxedProductsPaged); // ?userId=&status=unshipped|shipped&refunded=false&page=&limit=
+router.get('/orders/unboxed', orderCtrl.getUnboxedOrdersByUserId);
+router.get('/orders/all', orderCtrl.getAllOrders);
+router.get('/order/:id', orderCtrl.getOrderById);
 
-// 공지사항 추가
-router.post('/order', addToOrder);
-router.get('/order', getOrdersByUserId);
+router.post('/orders/:id/unbox', orderCtrl.unboxOrder);
+router.post('/orders/unbox/batch', orderCtrl.unboxOrdersBatch);
 
-router.get('/orders', getAllOrders);
-router.get('/orders/unboxed', getUnboxedOrdersByUserId);
-router.get('/orders/unboxed/all', getAllUnboxedOrders);
+router.post('/orders/:id/refund', orderCtrl.refundOrder);
+router.patch('/order/:id', orderCtrl.updateOrder);
+router.patch('/orders/:id/tracking', orderCtrl.updateTrackingNumber);
 
-router.post('/orders/:id/refund', refundOrder);
-router.get('/orders/:id', getOrderById);
-router.post('/orders/:id/unbox', unboxOrder);
-router.patch('/order/:id', updateOrder);
-router.patch('/order/:id/tracking', updateTrackingNumber);
 module.exports = router;
-
-

@@ -15,6 +15,18 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const JWT_SECRET = 'jm_shoppingmall';
 const S3_BUCKET = process.env.S3_BUCKET;
 
+function computeRefundPolicy(consumerPrice) {
+  if (consumerPrice < 30000) {
+    return { basis: 'box', rate: 60 };
+  } else if (consumerPrice < 50000) {
+    return { basis: 'consumer', rate: 60 };
+  } else if (consumerPrice < 200000) {
+    return { basis: 'consumer', rate: 70 };
+  } else {
+    return { basis: 'consumer', rate: 80 };
+  }
+}
+
 // ---- 공통 유틸 ----
 
 // 프리사인 URL 발급 (기본 10분)
@@ -65,8 +77,16 @@ exports.createProduct = async (req, res) => {
 
     const {
       name, brand, category, probability, consumerPrice, price, shippingFee,
-      option, description, sourceLink, isSourceSoldOut, refundProbability
+      option, description, sourceLink, isSourceSoldOut,
+      // refundProbability  <= ✅ 클라에서 보내더라도 무시
     } = req.body;
+
+    const consumerPriceNum = Number(consumerPrice) || 0;
+    const priceNum = Number(price) || 0;
+    const shippingFeeNum = Number(shippingFee) || 0;
+
+    // ✅ 환급 정책 계산
+    const policy = computeRefundPolicy(consumerPriceNum);
 
     const productNumber = 'P' + Date.now();
 
@@ -76,22 +96,25 @@ exports.createProduct = async (req, res) => {
       brand,
       category,
       probability,
-      consumerPrice,
-      price,
-      shippingFee,
+      consumerPrice: consumerPriceNum,
+      price: priceNum,
+      shippingFee: shippingFeeNum,
+      totalPrice: priceNum + shippingFeeNum,
       option,
       description,
       sourceLink,
       isSourceSoldOut: isSourceSoldOut === 'true',
-      // DB에는 key만 저장
       mainImage: mainImageKey,
       additionalImages: additionalImageKeys,
-      refundProbability
+
+      // ✅ 저장: 새 구조 + 레거시 값(rate만)
+      refundPolicy: policy,
+      refundProbability: policy.rate,
     });
 
     const createdProduct = await product.save();
 
-    // 박스 매핑
+    // 박스 매핑 (기존 로직 유지)
     if (category) {
       const box = await Box.findOne({ name: category });
       if (box) {
@@ -106,9 +129,7 @@ exports.createProduct = async (req, res) => {
       }
     }
 
-    // 응답에 바로 보기용 URL 포함
     const withUrls = await attachSignedUrls(createdProduct, 60 * 10);
-
     return res.status(200).json({ success: true, product: withUrls });
   } catch (err) {
     console.error('상품 등록 실패:', err);

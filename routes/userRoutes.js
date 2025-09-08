@@ -18,12 +18,13 @@ const {
   getUserInfoByField,
   checkDuplicate,
   checkReferralCode,
-  uploadProfileImage,   // ← 컨트롤러에서 [multer-s3, handler] 배열
+  uploadProfileImage,   // 컨트롤러에서 [multer-s3, handler] 배열
   resetPassword,
   verifyBootpayAuth,
   findEmailByPhone,
   withDrawUser,
   searchUsers,
+  checkPhoneDuplicate,
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -31,7 +32,7 @@ const router = express.Router();
 // ─────────────────────────────────────────────────────
 // JWT 인증 (업로드 전에 헤더만 검사: 바디 건드리지 않음)
 // ─────────────────────────────────────────────────────
-const JWT_SECRET = 'jm_shoppingmall'; // 권장: 환경변수로 이동
+const JWT_SECRET = 'jm_shoppingmall'; // 권장: 환경변수
 function authRequired(req, res, next) {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -43,13 +44,17 @@ function authRequired(req, res, next) {
   }
 }
 
+// ─────────────────────────────────────────────────────
 // 로그인/회원
+// ─────────────────────────────────────────────────────
 router.post('/login', loginUser);
 router.post('/loginAdmin', loginAdmin);
 router.post('/social-login', socialLogin);
 router.post('/signup', signupUser);
 
+// ─────────────────────────────────────────────────────
 // 유저 조회/수정/삭제
+// ─────────────────────────────────────────────────────
 router.get('/userinfo', getAllUsersInfo);
 router.get('/userCheck', getUserInfoByField);
 router.get('/userinfoget', getUserInfo);
@@ -60,16 +65,27 @@ router.put('/changePassword', changePassword);
 router.put('/userinfoUpdate', updateUserInfo);
 router.delete('/userinfo/:id', deleteUser);
 
-// ✅ 프로필 이미지 업로드 (S3)
-// ❌ 기존: upload.fields([...])  ← 제거!
-// ✅ 컨트롤러의 [multer-s3, handler]만 사용
+// ─────────────────────────────────────────────────────
+// 프로필 이미지 업로드 (S3)
+// 컨트롤러의 [multer-s3, handler]만 사용
+// ─────────────────────────────────────────────────────
 router.post('/profile', authRequired, ...uploadProfileImage);
 
+// ─────────────────────────────────────────────────────
 // 부가 기능
+// ─────────────────────────────────────────────────────
 router.post('/bootpay/verify-auth', verifyBootpayAuth);
 router.post('/reset-password', resetPassword);
 router.get('/findEmail', findEmailByPhone);
 router.delete('/withdraw', withDrawUser);
 router.get('/search', searchUsers);
+
+// ─────────────────────────────────────────────────────
+// 중복/추천/휴대폰 체크 (공개 엔드포인트)
+// Flutter 클라이언트가 사용하는 경로/메서드에 맞춤
+// ─────────────────────────────────────────────────────
+router.post('/check-duplicate', checkDuplicate);      // { nickname } 또는 { email }
+router.post('/check-referral', checkReferralCode);    // { referralCode }
+router.post('/check-phone', checkPhoneDuplicate);     // { phoneNumber } 사용 권장 (컨트롤러는 query도 허용)
 
 module.exports = router;
