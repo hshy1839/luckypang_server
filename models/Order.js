@@ -52,6 +52,7 @@ orderSchema.index({ user: 1, 'unboxedProduct.decidedAt': -1 });
 orderSchema.index({ 'unboxedProduct.product': 1, createdAt: -1 });
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ user: 1, 'refunded.point': 1 });
+orderSchema.index({ user: 1, status: 1, 'unboxedProduct.product': 1, createdAt: -1 });
 
 module.exports = mongoose.model('Order', orderSchema);
 

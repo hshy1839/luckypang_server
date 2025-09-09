@@ -7,6 +7,7 @@ const Box = require('../models/Box/Box');
 const axios = require('axios');
 const Product = require('../models/Product');
 const Notification = require('../models/Notification');
+const GiftCode = require('../models/GiftCode');
 
 const JWT_SECRET = 'jm_shoppingmall';
 
@@ -540,7 +541,6 @@ exports.refundOrder = async (req, res) => {
  * 주문 업데이트
  * PATCH /api/order/:id
  * ───────────────────────────────────────────── */
-// controllers/orderController.js
 exports.updateOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
@@ -557,45 +557,12 @@ exports.updateOrder = async (req, res) => {
       return res.status(404).json({ success: false, message: '해당 주문을 찾을 수 없습니다.' });
     }
 
-    // 👇 관리자 허용 (user_type === '1')
-    const actor = await User.findById(userId);
-    const isAdmin = actor && actor.user_type === '1';
-
-    if (!isAdmin && order.user.toString() !== userId) {
+    if (order.user.toString() !== userId) {
       return res.status(403).json({ success: false, message: '권한이 없습니다.' });
     }
 
-    // 수정 허용 필드
     const allowedFields = ['boxCount', 'paymentAmount', 'status', 'pointUsed', 'trackingNumber', 'trackingCompany'];
-
-    // 👉 상태 전이 가드 (필요 시 확장)
-    if (Object.prototype.hasOwnProperty.call(updateFields, 'status')) {
-      const next = String(updateFields.status);
-
-      if (isAdmin) {
-        // 관리자: cancel_requested → cancelled 허용
-        if (order.status === 'cancel_requested' && next === 'cancelled') {
-          order.status = 'cancelled';
-        } else if (next === order.status) {
-          // no-op
-        } else {
-          return res.status(400).json({ success: false, message: '허용되지 않는 상태 변경입니다.' });
-        }
-      } else {
-        // 일반 사용자: paid → cancel_requested 허용
-        if (order.status === 'paid' && next === 'cancel_requested') {
-          order.status = 'cancel_requested';
-        } else if (next === order.status) {
-          // no-op
-        } else {
-          return res.status(400).json({ success: false, message: '허용되지 않는 상태 변경입니다.' });
-        }
-      }
-    }
-
-    // 나머지 필드 적용
     allowedFields.forEach((field) => {
-      if (field === 'status') return; // 위에서 처리
       if (Object.prototype.hasOwnProperty.call(updateFields, field)) {
         order[field] = updateFields[field];
       }
@@ -618,7 +585,6 @@ exports.updateOrder = async (req, res) => {
     return res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
-
 
 /* ─────────────────────────────────────────────
  * 운송장 업데이트 (관리자)
@@ -702,13 +668,31 @@ exports.getBoxesPaged = async (req, res) => {
     ]);
 
     // 클라에서 GiftCodeController로 giftCodeExists 확인 예정 → 서버는 그대로 전달
-    return res.status(200).json({
-      success: true,
-      items,
-      totalCount,
-      page,
-      pageSize: limit,
-    });
+   const orderIds = items.map(o => o._id);
+const userIdObj = new mongoose.Types.ObjectId(userId);
+
+// GiftCode에서 type=box && fromUser=userId && orderId∈items 만 한 번에 조사
+const gcs = await GiftCode.find({
+  type: 'box',
+  fromUser: userIdObj,
+  orderId: { $in: orderIds },
+}).select('fromUser boxId orderId type').lean();
+
+// 빠른 조회를 위해 Set 구성( orderId 기준으로만 판단해도 충분 )
+const giftedOrderIdSet = new Set(gcs.map(gc => String(gc.orderId)));
+
+const enriched = items.map(o => ({
+  ...o,
+  giftCodeExists: giftedOrderIdSet.has(String(o._id)),
+}));
+
+return res.status(200).json({
+  success: true,
+  items: enriched,
+  totalCount,
+  page,
+  pageSize: limit,
+});
   } catch (e) {
     console.error('💥 getBoxesPaged 오류:', e);
     return res.status(500).json({ success: false, message: '서버 오류' });
