@@ -4,10 +4,11 @@ const router = express.Router();
 const orderCtrl = require('../controllers/orderController');
 
 router.post('/order', orderCtrl.addToOrder);
-router.get('/orders', orderCtrl.getOrdersByUserId); // ?userId=&paged=true&page=&limit=
-router.get('/orders/boxes', orderCtrl.getBoxesPaged); // ?userId=&status=paid&unboxed=false&page=&limit=
-router.get('/orders/unboxed-products', orderCtrl.getUnboxedProductsPaged); // ?userId=&status=unshipped|shipped&refunded=false&page=&limit=
+router.get('/orders', orderCtrl.getOrdersByUserId);
+router.get('/orders/boxes', orderCtrl.getBoxesPaged); 
+router.get('/orders/unboxed-products', orderCtrl.getUnboxedProductsPaged); 
 router.get('/orders/unboxed', orderCtrl.getUnboxedOrdersByUserId);
+router.get('/orders/unboxed/all', orderCtrl.getAllUnboxedOrders);
 router.get('/orders/all', orderCtrl.getAllOrders);
 router.get('/order/:id', orderCtrl.getOrderById);
 

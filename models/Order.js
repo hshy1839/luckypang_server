@@ -13,11 +13,17 @@ const orderSchema = new mongoose.Schema({
   paymentAmount: { type: Number, required: true },
   pointUsed: { type: Number, default: 0 },
   status: {
-    type: String,
-    enum: ['pending', 'paid', 'cancelled', 'shipped', 'refunded'],
-    default: 'paid'
-  },
-
+  type: String,
+  enum: [
+    'pending',          // 결제 전
+    'paid',             // 결제 완료
+    'cancel_requested', // 사용자가 결제취소 요청한 상태
+    'cancelled',        // 관리자가 승인해서 결제 자체가 취소됨 (매입 전)
+    'refunded',         // 환불 완료 (매입 후 or 이미 결제된 금액 환급)
+    'shipped'           // 배송 진행
+  ],
+  default: 'paid'
+},
   unboxedProduct: {
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
     decidedAt: Date
