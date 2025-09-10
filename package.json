@@ -32,6 +32,7 @@
         "multer-s3": "^3.0.1",
         "nodemailer": "^7.0.3",
         "nodemon": "^3.1.7",
+        "p-limit": "^7.1.1",
         "path": "^0.12.7",
         "querystring": "^0.2.1",
         "request-ip": "^3.3.0",

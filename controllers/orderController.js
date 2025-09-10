@@ -8,7 +8,7 @@ const axios = require('axios');
 const Product = require('../models/Product');
 const Notification = require('../models/Notification');
 const GiftCode = require('../models/GiftCode');
-
+const pLimit = require('p-limit').default;
 const JWT_SECRET = 'jm_shoppingmall';
 
 // 테스트키/엔드포인트 (사용중인 곳 없음: 필요시 유지)
@@ -366,66 +366,71 @@ exports.unboxOrdersBatch = async (req, res) => {
     }
     orderIds = orderIds.slice(0, 10);
 
-    const results = [];
-    for (const id of orderIds) {
-      try {
-        const base = await Order.findById(id).select('user box unboxedProduct status');
-        if (!base) { results.push({ orderId: id, success: false, order: null, message: '주문이 없습니다.' }); continue; }
-        if (String(base.user) !== String(requester)) {
-          results.push({ orderId: id, success: false, order: null, message: '권한이 없습니다.' });
-          continue;
-        }
-        if (base.status !== 'paid') {
-          results.push({ orderId: id, success: false, order: null, message: '결제 완료 상태 아님' });
-          continue;
-        }
+    const limit = pLimit(3); // 동시에 3개씩 처리 (환경에 맞게 조절)
 
-        const box = await Box.findById(base.box).populate('products.product');
-        if (!box || !Array.isArray(box.products) || box.products.length === 0) {
-          results.push({ orderId: id, success: false, order: null, message: '박스에 상품이 없습니다.' });
-          continue;
-        }
-
-        const selectedProduct = pickProductWeighted(box.products);
-        if (!selectedProduct || !selectedProduct._id) {
-          results.push({ orderId: id, success: false, order: null, message: '상품 선택 실패' });
-          continue;
-        }
-
-        const updated = await Order.findOneAndUpdate(
-          {
-            _id: id,
-            $or: [
-              { 'unboxedProduct.product': { $exists: false } },
-              { 'unboxedProduct.product': null },
-            ],
-          },
-          {
-            $set: {
-              'unboxedProduct.product': selectedProduct._id,
-              'unboxedProduct.decidedAt': new Date(),
-            },
-          },
-          { new: true }
-        );
-
-        if (!updated) {
-          const already = await Order.findById(id).populate('box user unboxedProduct.product');
-          results.push({ orderId: id, success: false, order: already || null, message: '이미 열림 또는 처리 중' });
-          continue;
-        }
-
-        const populated = await Order.findById(updated._id)
-          .populate('box', BOX_PICK)
-          .populate('user', USER_PICK)
-          .populate('unboxedProduct.product', PRODUCT_PICK);
-
-        results.push({ orderId: id, success: true, order: populated, message: null });
-      } catch (e) {
-        console.error('💥 배치 언박싱 개별 오류:', e);
-        results.push({ orderId: id, success: false, order: null, message: e.message || '서버 오류' });
+    const unboxOne = async (id) => {
+      const base = await Order.findById(id).select('user box unboxedProduct status').exec();
+      if (!base) return { orderId: id, success: false, order: null, message: '주문이 없습니다.' };
+      if (String(base.user) !== String(requester)) {
+        return { orderId: id, success: false, order: null, message: '권한이 없습니다.' };
       }
-    }
+      if (base.status !== 'paid') {
+        return { orderId: id, success: false, order: null, message: '결제 완료 상태 아님' };
+      }
+
+      const box = await Box.findById(base.box).populate('products.product').exec();
+      if (!box || !Array.isArray(box.products) || box.products.length === 0) {
+        return { orderId: id, success: false, order: null, message: '박스에 상품이 없습니다.' };
+      }
+
+      const selectedProduct = pickProductWeighted(box.products);
+      if (!selectedProduct || !selectedProduct._id) {
+        return { orderId: id, success: false, order: null, message: '상품 선택 실패' };
+      }
+
+      const updated = await Order.findOneAndUpdate(
+        {
+          _id: id,
+          $or: [
+            { 'unboxedProduct.product': { $exists: false } },
+            { 'unboxedProduct.product': null },
+          ],
+        },
+        {
+          $set: {
+            'unboxedProduct.product': selectedProduct._id,
+            'unboxedProduct.decidedAt': new Date(),
+          },
+        },
+        { new: true }
+      ).exec();
+
+      if (!updated) {
+        const already = await Order.findById(id)
+          .populate('box user unboxedProduct.product')
+          .exec();
+        return { orderId: id, success: false, order: already || null, message: '이미 열림 또는 처리 중' };
+      }
+
+      const populated = await Order.findById(updated._id)
+        .populate('box', BOX_PICK)
+        .populate('user', USER_PICK)
+        .populate('unboxedProduct.product', PRODUCT_PICK)
+        .exec();
+
+      return { orderId: id, success: true, order: populated, message: null };
+    };
+
+    const settled = await Promise.allSettled(
+      orderIds.map((id) => limit(() => unboxOne(id)))
+    );
+
+    const results = settled.map((r, idx) => {
+      const id = orderIds[idx];
+      if (r.status === 'fulfilled') return r.value;
+      console.error('💥 배치 언박싱 개별 오류:', r.reason);
+      return { orderId: id, success: false, order: null, message: r.reason?.message || '서버 오류' };
+    });
 
     return res.status(200).json({ success: true, results });
   } catch (err) {
@@ -433,6 +438,7 @@ exports.unboxOrdersBatch = async (req, res) => {
     return res.status(500).json({ success: false, message: err.message || '서버 오류' });
   }
 };
+
 
 /* ─────────────────────────────────────────────
  * 언박싱 조회 (전체) – 기존

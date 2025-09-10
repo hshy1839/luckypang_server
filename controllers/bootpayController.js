@@ -5,7 +5,7 @@ const Order = require('../models/Order');
 const Box  = require('../models/Box/Box'); // 박스 모델
 const JWT_SECRET = 'jm_shoppingmall';
 const Point = require('../models/Point');
-
+const Notification = require('../models/Notification');
 
 // 부트페이 설정 (자주 안 바뀜, 앱아이디/키는 니꺼 맞는지 꼭 확인!)
 RestClient.setConfig(
@@ -79,11 +79,15 @@ for (let i = 0; i < boxCount; i++) {
   await newOrder.save();
   createdOrders.push(newOrder);
 }
-await Notification.create({
-  userId: user._id,
-  message: '박스 결제가 완료되었습니다.',
-  url: '/order'
-});
+if (Notification && typeof Notification.create === 'function') {
+  await Notification.create({
+    userId: user._id,
+    message: '박스 결제가 완료되었습니다.',
+    url: '/order',
+  });
+} else {
+  console.warn('[verifyBootpayAndCreateOrder] Notification model not available, skip creating notification.');
+}
 
 
   console.log('🟢 새 주문 저장:', createdOrders.map(o => o._id));
