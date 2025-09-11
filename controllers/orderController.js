@@ -563,9 +563,6 @@ exports.updateOrder = async (req, res) => {
       return res.status(404).json({ success: false, message: '해당 주문을 찾을 수 없습니다.' });
     }
 
-    if (order.user.toString() !== userId) {
-      return res.status(403).json({ success: false, message: '권한이 없습니다.' });
-    }
 
     const allowedFields = ['boxCount', 'paymentAmount', 'status', 'pointUsed', 'trackingNumber', 'trackingCompany'];
     allowedFields.forEach((field) => {

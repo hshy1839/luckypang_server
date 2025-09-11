@@ -25,6 +25,7 @@ const {
   withDrawUser,
   searchUsers,
   checkPhoneDuplicate,
+  checkAuth,
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -79,6 +80,7 @@ router.post('/reset-password', resetPassword);
 router.get('/findEmail', findEmailByPhone);
 router.delete('/withdraw', withDrawUser);
 router.get('/search', searchUsers);
+router.get('/check-auth', checkAuth);
 
 // ─────────────────────────────────────────────────────
 // 중복/추천/휴대폰 체크 (공개 엔드포인트)

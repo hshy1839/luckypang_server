@@ -143,6 +143,35 @@ function createTokenAndRespond(user, res) {
   res.status(200).json({ loginSuccess: true, token, userId: user._id });
 }
 
+exports.checkAuth = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ success: false, message: '토큰이 없습니다.' });
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({ success: false, message: '유효하지 않은 토큰입니다.' });
+    }
+
+    const user = await User.findById(decoded.userId).select('_id is_active');
+    if (!user) return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
+    if (!user.is_active) return res.status(403).json({ success: false, message: '승인 대기 중입니다.' });
+
+    // (선택) 토큰 재발급 원하면 주석 해제해서 새 토큰 내려주기
+    // const freshToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '30d' });
+
+    return res.status(200).json({
+      success: true,
+      userId: user._id,
+      // token: freshToken, // 재발급 시
+    });
+  } catch (err) {
+    console.error('check-auth 실패:', err);
+    return res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};
 // ─────────────────────────────────────────────────────
 // 회원가입/로그인/소셜
 // ─────────────────────────────────────────────────────
