@@ -1,7 +1,6 @@
 // controllers/productController.js
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
-
 const { Product } = require('../models/Product');
 const Box = require('../models/Box/Box.js');
 
@@ -209,16 +208,31 @@ exports.deleteProduct = async (req, res) => {
     const product = await Product.findById(id);
     if (!product) return res.status(404).json({ success: false, message: '제품을 찾을 수 없습니다.' });
 
-    // S3 삭제
+    // 1) S3 삭제 (실패해도 진행: best-effort)
+    const tasks = [];
     if (typeof product.mainImage === 'string' && product.mainImage) {
-      await deleteS3Key(product.mainImage);
+      tasks.push(deleteS3Key(product.mainImage));
     }
     if (Array.isArray(product.additionalImages)) {
-      await Promise.all(product.additionalImages.map(k => deleteS3Key(k)));
+      for (const k of product.additionalImages) tasks.push(deleteS3Key(k));
     }
+    await Promise.allSettled(tasks); // ✅ S3 실패가 DB/Box 삭제를 막지 않도록
 
-    await Product.findByIdAndDelete(id);
-    return res.status(200).json({ success: true, message: '제품이 삭제되었습니다.' });
+    // 2) 모든 Box에서 해당 product 참조 제거
+    const boxPull = await Box.updateMany(
+      { 'products.product': id },
+      { $pull: { products: { product: id } } }
+    );
+
+    // 3) 실제 Product 문서 삭제
+    const del = await Product.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: '제품이 삭제되었습니다.',
+      deletedProductId: id,
+      boxUpdatedCount: boxPull?.modifiedCount || 0, // 몇 개 박스에서 빠졌는지 참고용
+    });
   } catch (err) {
     console.error('제품 삭제 중 오류 발생:', err);
     return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
@@ -283,7 +297,7 @@ exports.updateProduct = async (req, res) => {
       product.additionalImages = [];
     }
 
-    // 🔸 일반 텍스트 필드
+    // 🔸 일반 텍스트/숫자 필드 (숫자는 캐스팅 권장)
     const fields = [
       'name', 'brand', 'category', 'probability',
       'consumerPrice', 'price', 'shippingFee',
@@ -291,7 +305,12 @@ exports.updateProduct = async (req, res) => {
     ];
     fields.forEach((f) => {
       if (Object.prototype.hasOwnProperty.call(req.body, f)) {
-        product[f] = req.body[f];
+        // 숫자형 필드는 Number 캐스팅
+        if (['consumerPrice', 'price', 'shippingFee', 'probability', 'refundProbability'].includes(f)) {
+          product[f] = Number(req.body[f]);
+        } else {
+          product[f] = req.body[f];
+        }
       }
     });
 
@@ -299,13 +318,48 @@ exports.updateProduct = async (req, res) => {
 
     await product.save();
 
-    // 박스 확률 동기화
-    await Box.updateMany(
-      { 'products.product': product._id },
-      { $set: { 'products.$[elem].probability': product.probability } },
-      { arrayFilters: [{ 'elem.product': product._id }] }
-    );
-    console.log(`[LOG] 상품ID(${product._id})가 포함된 모든 박스의 확률을 ${product.probability}로 동기화`);
+    // ── ✅ 카테고리(=박스 이름) 기준 박스 매핑 ─────────────────
+    const targetBoxName = product.category && String(product.category).trim();
+    if (targetBoxName) {
+      const targetBox = await Box.findOne({ name: targetBoxName });
+
+      if (targetBox) {
+        // 1) 타겟 박스에 포함/업데이트
+        const idx = targetBox.products.findIndex(p => String(p.product) === String(product._id));
+        const probNum = Number(product.probability) || 0;
+
+        if (idx >= 0) {
+          // 이미 있으면 확률만 동기화
+          targetBox.products[idx].probability = probNum;
+        } else {
+          // 없으면 추가
+          targetBox.products.push({ product: product._id, probability: probNum });
+        }
+        await targetBox.save();
+
+        // 2) 그 외 모든 박스에서 제거 (카테고리가 바뀐 경우 정리)
+        await Box.updateMany(
+          { _id: { $ne: targetBox._id }, 'products.product': product._id },
+          { $pull: { products: { product: product._id } } }
+        );
+      } else {
+        // 카테고리 이름에 해당하는 박스가 없으면, 기존 모든 박스에서 제거
+        await Box.updateMany(
+          { 'products.product': product._id },
+          { $pull: { products: { product: product._id } } }
+        );
+      }
+    } else {
+      // 카테고리가 비어있다면, 모든 박스에서 제거
+      await Box.updateMany(
+        { 'products.product': product._id },
+        { $pull: { products: { product: product._id } } }
+      );
+    }
+    // ───────────────────────────────────────────────────
+
+    // (선택) 확률 일괄 동기화 로직은 위에서 타겟 박스에만 반영하고
+    // 나머지는 제거하므로 별도 updateMany로 전체 동기화할 필요가 없습니다.
 
     const withUrls = await attachSignedUrls(product, 60 * 10);
     return res.status(200).json({ success: true, product: withUrls });
@@ -314,7 +368,6 @@ exports.updateProduct = async (req, res) => {
     return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };
-
 // ─────────────────────────────────────────────────────
 // 카테고리별 조회 (프리사인 URL 포함)
 // ─────────────────────────────────────────────────────
