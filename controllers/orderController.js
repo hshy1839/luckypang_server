@@ -68,6 +68,7 @@ const pickFields = (doc, fields) => {
  * 가중치 상품 선택
  * items: [{ product, probability }, ...] with product populated
  * ───────────────────────────────────────────── */
+// 기존 함수 그대로 두고...
 function pickProductWeighted(items) {
   const valid = (items || []).filter((it) => it && it.product && it.product._id);
   if (valid.length === 0) return null;
@@ -90,6 +91,11 @@ function pickProductWeighted(items) {
   }
   return valid[valid.length - 1].product;
 }
+
+// ──────────────────────────────
+// 검증 코드 (예: 100번 시뮬레이션)
+// ──────────────────────────────
+
 
 /* ─────────────────────────────────────────────
  * 주문 생성
